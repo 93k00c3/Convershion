@@ -1,5 +1,9 @@
 import os
+import sys
+import time
+import datetime
 import uuid
+import subprocess
 
 from flask import Flask, flash, request, redirect, render_template, url_for
 from flask_wtf import FlaskForm
@@ -13,16 +17,20 @@ SECRET_KEY = os.urandom(32)
 ALLOWED_EXTENSIONS = {'flac', 'alac', 'mp3', 'wav'}
 app.config['SECRET_KEY'] = SECRET_KEY
 
+
 class upload(FlaskForm):
     file = FileField("File")
     submit = SubmitField("Upload File")
+
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
 FFMPEG = ('ffmpeg -hide_banner -loglevel {loglevel}'
           ' -i "{source}" -f mp3 -ab {bitrate} -vcodec copy "{target}"')
+
 
 # def parse_args():
 #     parser = argparse.ArgumentParser()
@@ -56,24 +64,36 @@ FFMPEG = ('ffmpeg -hide_banner -loglevel {loglevel}'
 #         ffmpeg, shell=True, stderr=subprocess.STDOUT, universal_newlines=True)
 
 
-@app.route('/', methods =["GET", "POST"])
+@app.route('/', methods=["GET", "POST"])
 def upload_file():
     if request.method == 'POST':
         # check if the post request has the file part
-        file = request.files['file']
-        if file.filename == '':
-            flash('No file selected for uploading')
+        if not request.files:
+            flash('No files selected for uploading')
             return redirect(request.url)
-        if file and allowed_file(file.filename):
+
+        # Get the name of the first file in the list
+        first_file = request.files.getlist('file')[0]
+        folder_name = secure_filename(first_file.filename).split('.')[0]
+
+        # Create the folder path with the first file name
+        folder_path = os.path.join(parent_path, folder_name)
+
+        # check if the file extension is allowed
+        if not any([allowed_file(f.filename) for f in request.files.getlist('file')]):
+            flash('Allowed file types are flac, alac, mp3, wav')
+            return redirect(request.url)
+
+        for file in request.files.getlist('file'):
+            if file.filename == '':
+                continue
             filename = secure_filename(file.filename)
-            path = os.path.join(parent_path + filename.split('.')[0])
-            os.mkdir(path)
-            file.save(os.path.join(parent_path +(filename.split('.')[0]), filename))
-            flash('File successfully uploaded')
-            return redirect(url_for('upload_file', name=filename))
-        else:
-            flash('Allowed file types are txt, pdf, png, jpg, jpeg, gif')
+            file.save(os.path.join(folder_path, filename))
+        flash('Files successfully uploaded')
+        return redirect(url_for('upload_file', name=filename))
     return render_template('index.html')
+
+
 
 def get_all_files_in_dir(parent_path):
     all_files = []
@@ -84,6 +104,15 @@ def get_all_files_in_dir(parent_path):
         elif os.path.isdir(path):
             all_files += (get_all_files_in_dir(path))
     return all_files
+
+
+def convert_to_mp3(task):
+    parent_path = task[0]
+    filename = task[1]
+    path = os.path.join(parent_path, filename)
+    new_filename = os.path.splitext(filename)[0] + '.mp3'
+    new_path = os.path.join(parent_path, os.path.basename(parent_path) + "-")
+
 
 if __name__ == '__main__':
     app.run(debug=True)
