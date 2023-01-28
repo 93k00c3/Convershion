@@ -59,7 +59,7 @@ def upload_file():
         return render_template('index.html')
 
 
-@app.route('/conversion/', methods=["GET", "POST"])
+@app.route('/conversion', methods=["GET", "POST"])
 def conversion():
     folder_path = request.args.get('folder_path')
     files = os.listdir(folder_path)
