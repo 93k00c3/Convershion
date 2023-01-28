@@ -17,51 +17,13 @@ SECRET_KEY = os.urandom(32)
 ALLOWED_EXTENSIONS = {'flac', 'alac', 'mp3', 'wav'}
 app.config['SECRET_KEY'] = SECRET_KEY
 
-
-class upload(FlaskForm):
-    file = FileField("File")
-    submit = SubmitField("Upload File")
+FFMPEG = ('ffmpeg -hide_banner -loglevel {loglevel}'
+          ' -i "{source}" -f mp3 -ab {bitrate} -vcodec copy "{target}"')
 
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-FFMPEG = ('ffmpeg -hide_banner -loglevel {loglevel}'
-          ' -i "{source}" -f mp3 -ab {bitrate} -vcodec copy "{target}"')
-
-
-# def parse_args():
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument(
-#         '-r', '--recursive', default=False, action='store_true',
-#         help='search subdirectories')
-#     parser.add_argument(
-#         '-b', '--bitrate', default='320k', metavar='BITRATE',
-#         choices=('256k', '320k'),
-#         help='desired bitrate of the target files (default 320k)')
-#     parser.add_argument(
-#         '--ffmpeg-loglevel', default='error', metavar='LEVEL',
-#         choices=('debug', 'verbose', 'info', 'warning',
-#                  'error', 'fatal', 'panic', 'quiet'),
-#         help='desired level of ffmpeg output (default error)')
-#     parser.add_argument(
-#         'sources', nargs='+', metavar='SOURCE',
-#         help='file or directory to convert')
-#     parser.add_argument(
-#         'target', nargs=1, metavar='TARGET',
-#         help='target directory for the converted files and/or directories')
-#     args = parser.parse_args()
-#     args.sources = [Path(src) for src in args.sources]
-#     args.target = Path(args.target[0])
-#     return args
-#
-# def call_ffmpeg(source, target, bitrate='320k', loglevel='error'):
-#     ffmpeg = FFMPEG.format(loglevel=loglevel, source=source,
-#                            bitrate=bitrate, target=target)
-#     return subprocess.check_output(
-#         ffmpeg, shell=True, stderr=subprocess.STDOUT, universal_newlines=True)
 
 
 @app.route('/', methods=["GET", "POST"])
@@ -78,6 +40,8 @@ def upload_file():
 
         # Create the folder path with the first file name
         folder_path = os.path.join(parent_path, folder_name)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
 
         # check if the file extension is allowed
         if not any([allowed_file(f.filename) for f in request.files.getlist('file')]):
@@ -90,28 +54,33 @@ def upload_file():
             filename = secure_filename(file.filename)
             file.save(os.path.join(folder_path, filename))
         flash('Files successfully uploaded')
-        return redirect(url_for('upload_file', name=filename))
-    return render_template('index.html')
+        return redirect(url_for('conversion', folder_path=folder_path))
+    else:
+        return render_template('index.html')
 
 
+@app.route('/conversion/', methods=["GET", "POST"])
+def conversion():
+    folder_path = request.args.get('folder_path')
+    files = os.listdir(folder_path)
+    if not os.path.exists(folder_path):
+        flash('The folder does not exist')
+        return redirect(request.url)
+    if request.method == 'POST':
+        selected_files = request.form.getlist('files')
+        conversion_type = request.form['conversion_type']
+        convert_audio_files(folder_path, selected_files, conversion_type)
+        flash('Files have been successfully converted')
+        return redirect(url_for('conversion', folder_path=folder_path))
+    return render_template('conversion.html', files=files)
 
-def get_all_files_in_dir(parent_path):
-    all_files = []
-    for path in os.listdir(parent_path):
-        path = os.path.join(parent_path, path)
-        if os.path.isfile(path):
-            all_files.append(path)
-        elif os.path.isdir(path):
-            all_files += (get_all_files_in_dir(path))
-    return all_files
 
-
-def convert_to_mp3(task):
-    parent_path = task[0]
-    filename = task[1]
-    path = os.path.join(parent_path, filename)
-    new_filename = os.path.splitext(filename)[0] + '.mp3'
-    new_path = os.path.join(parent_path, os.path.basename(parent_path) + "-")
+def convert_audio_files(folder_path, selected_files, conversion_type):
+    for file in selected_files:
+        input_file = os.path.join(folder_path, file)
+        output_file = os.path.splitext(input_file)[0] + '.' + conversion_type
+        command = "ffmpeg -i" + input_file + " " + output_file
+        subprocess.call(command, shell=True)
 
 
 if __name__ == '__main__':
