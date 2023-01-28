@@ -54,6 +54,7 @@ def upload_file():
             filename = secure_filename(file.filename)
             file.save(os.path.join(folder_path, filename))
         flash('Files successfully uploaded')
+        print(folder_path)
         return redirect(url_for('conversion', folder_path=folder_path))
     else:
         return render_template('index.html')
@@ -62,7 +63,10 @@ def upload_file():
 @app.route('/conversion', methods=["GET", "POST"])
 def conversion():
     folder_path = request.args.get('folder_path')
+    print(folder_path)
     files = os.listdir(folder_path)
+    for file in files:
+        print(str(file))
     if not os.path.exists(folder_path):
         flash('The folder does not exist')
         return redirect(request.url)
@@ -72,14 +76,14 @@ def conversion():
         convert_audio_files(folder_path, selected_files, conversion_type)
         flash('Files have been successfully converted')
         return redirect(url_for('conversion', folder_path=folder_path))
-    return render_template('conversion.html', files=files)
+    return render_template('conversion.html', files=files, folder_path=folder_path)
 
 
 def convert_audio_files(folder_path, selected_files, conversion_type):
     for file in selected_files:
         input_file = os.path.join(folder_path, file)
         output_file = os.path.splitext(input_file)[0] + '.' + conversion_type
-        command = "ffmpeg -i" + input_file + " " + output_file
+        command = "ffmpeg -i" + " " + input_file + " " + output_file
         subprocess.call(command, shell=True)
 
 
