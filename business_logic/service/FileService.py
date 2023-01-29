@@ -1,7 +1,10 @@
 import os
 from werkzeug.utils import secure_filename
+import configparser
 
-upload_path = 'C:\\Users\\admin\\Documents\\Convershion\\uploads'
+config = configparser.ConfigParser()
+config.read('config/app.ini')
+upload_path = config['FILES']['defaultPath']
 extensions = ['flac', 'alac', 'mp3', 'wav']
 
 

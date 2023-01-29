@@ -1,5 +1,6 @@
 import configparser
 import os
+import subprocess
 
 from flask import Flask, flash, request, redirect, render_template, url_for
 
@@ -31,15 +32,13 @@ def upload():
 
     if len(files) == 0:
         return render_template('index.html')
-
     folder_name = config['FILES']['user']
-
     try:
         save_files(folder_name, files)
         flash('Files successfully uploaded')
     except Exception as e:
         flash(str(e))
-    return redirect(url_for('conversion', folder_path='uploads/' + folder_name))
+    return redirect(url_for('conversion', folder_path=os.path.join(parent_path, folder_name)))
 
 
 @app.route('/conversion', methods=["GET", "POST"])
