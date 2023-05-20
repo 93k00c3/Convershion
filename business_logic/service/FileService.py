@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import os
 from werkzeug.utils import secure_filename
 
@@ -20,7 +21,7 @@ def save_files(folder_name: str, files):
         try:
             save_file(folder_name, files[key][0])
             files_saved += 1
-        except e:
+        except Exception as e:
             exception_messages.append(str(e))
     if exception_messages.size > 0:
         raise Exception(join_errors(exception_messages))
@@ -47,3 +48,19 @@ def save_file(folder_name: str, file):
 
 def is_extension_allowed(extension: str):
     return extension in extensions
+
+def delete_old_files(folder_name: str, days_old: int):
+    path = os.path.join(upload_path, folder_name)
+    cutoff_date = datetime.now() - timedelta(days=days_old)
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            file_modified_time = datetime.fromtimestamp(os.path.getmtime(file_path))
+            if file_modified_time < cutoff_date:
+                os.remove(file_path)
+
+        for dir in dirs:
+            dir_path = os.path.join(root, dir)
+            dir_modified_time = datetime.fromtimestamp(os.path.getmtime(dir_path))
+            if dir_modified_time < cutoff_date:
+                os.rmdir(dir_path)
