@@ -1,5 +1,6 @@
 import os
 from werkzeug.utils import secure_filename
+from datetime import datetime, timedelta
 import configparser
 
 config = configparser.ConfigParser()
@@ -23,7 +24,7 @@ def save_files(folder_name: str, files):
         try:
             save_file(folder_name, files[key][0])
             files_saved += 1
-        except e:
+        except Exception as e:
             exception_messages.append(str(e))
     if exception_messages.size > 0:
         raise Exception(join_errors(exception_messages))
@@ -39,6 +40,7 @@ def join_errors(exception_messages: list):
 def save_file(folder_name: str, file):
     file_name = secure_filename(file.filename)
     extension = file_name.split('.')[1]
+    delete_old_files(folder_name, days_old=7)
     if is_extension_allowed(extension) is False:
         raise Exception("Extension: '{}' not allowed, supported extensions: {}".format(extension, extensions))
     try:
@@ -50,3 +52,13 @@ def save_file(folder_name: str, file):
 
 def is_extension_allowed(extension: str):
     return extension in extensions
+
+def delete_old_files(folder_name: str, days_old: int):
+    path = os.path.join(upload_path, folder_name)
+    cutoff_date = datetime.now() - timedelta(days=days_old)
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            file_modified_time = datetime.fromtimestamp(os.path.getmtime(file_path))
+            if file_modified_time < cutoff_date:
+                os.remove(file_path)
