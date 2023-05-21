@@ -4,7 +4,7 @@ import os
 from flask import Flask, flash, request, redirect, render_template, url_for
 
 from business_logic.service.FileConversionService import convert_file
-from business_logic.service.FileService import save_files
+from business_logic.service.FileService import save_files, delete_old_files
 
 app = Flask(__name__)
 config = configparser.ConfigParser()
@@ -45,6 +45,7 @@ def upload():
 @app.route('/conversion', methods=["GET", "POST"])
 def conversion():
     folder_path = request.args.get('folder_path')
+    delete_old_files()
     files = os.listdir(folder_path)
     if not os.path.exists(folder_path):
         flash('The folder does not exist')
