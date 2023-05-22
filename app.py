@@ -2,9 +2,9 @@ import configparser
 import os
 
 from flask import Flask, flash, request, redirect, render_template, url_for
-
 from business_logic.service.FileConversionService import convert_file
 from business_logic.service.FileService import save_files, delete_old_files
+from business_logic.service.AuthService import login
 
 app = Flask(__name__)
 config = configparser.ConfigParser()
@@ -58,6 +58,12 @@ def conversion():
         return redirect(url_for('conversion', folder_path=folder_path))
     return render_template('conversion.html', files=files, folder_path=folder_path)
 
+@app.route('/login', methods=['GET', 'POST'])
+def login_route():
+    if request.method == 'POST':
+        return login()
+    else:
+        return render_template('login.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
