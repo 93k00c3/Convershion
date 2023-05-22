@@ -31,4 +31,32 @@
         </label>
     </div>
 </body>
+<script>
+        const fileInput = document.querySelector('input[type="file"]');
+        const graphContainer = document.getElementById('graph');
+
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const data = new FormData();
+                data.append('file', file);
+
+                fetch('/graph', {
+                    method: 'POST',
+                    body: data
+                })
+                .then(response => response.json())
+                .then(result => {
+                    graphContainer.innerHTML = `<img src="${result.image_url}" alt="Graph">`;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            };
+
+            reader.readAsArrayBuffer(file);
+        });
+    </script>
 </html>
