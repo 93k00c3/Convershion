@@ -5,7 +5,7 @@ Uploading a file will result in creating a file's audio spectrum, allowing to ch
 
 ### Libraries
 
-As for the moment application is using:
+As of the moment, the application is using
 * librosa
 * numpy
 * pyplot
