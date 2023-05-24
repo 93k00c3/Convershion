@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dist/output.css') }}">
 </head>
-
+{% include 'navbar.html' %}
 <body class="background-color: rgb(30, 41, 59); background-image: radial-gradient(at 0% 100%, rgb(23, 23, 23) 0, transparent 100%);">
     <form method=post enctype="multipart/form-data">
         <div class="grid place-items-top justify-center">
@@ -15,7 +15,7 @@
                 <label class="block  text-sm font-medium text-gray-900 dark:text-white" for="multiple_files">Upload multiple files</label>
                 <input class="block w-96 text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="multiple_files" type="file" name="file" multiple>
             </div>
-                <div id="graph"></div>
+                <div id="graph" class="items-center"></div>
             {# Dropzone #}
             <div class="flex items-center justify-center w-half">
                 <label for="dropzone-file" class="flex flex-col items-center justify-center w-96 h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600">
