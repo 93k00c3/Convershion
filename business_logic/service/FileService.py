@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 import os
+
+import numpy
 from werkzeug.utils import secure_filename
 import librosa
 import librosa.display
@@ -74,23 +76,23 @@ def delete_old_files(folder_name: str, days_old: int):
 
 def graph_creation(audio_file):
     audio, sr = librosa.load(audio_file, sr=None)
-    n_fft = 256
-    hop_length = int(n_fft / 2)
+    n_fft = 2048
+    hop_length = int(n_fft)
     spectrogram = librosa.stft(audio, n_fft=n_fft, hop_length=hop_length)
-    magnitude_spectrogram = np.abs(spectrogram)  # Magnitude spectrogram
+    magnitude_spectrogram = np.abs(spectrogram)
     log_magnitude_spectrogram = librosa.amplitude_to_db(magnitude_spectrogram, ref=np.max)
     times = librosa.frames_to_time(np.arange(log_magnitude_spectrogram.shape[1]), sr=sr, hop_length=hop_length)
     plt.figure(figsize=(10, 4))
     librosa.display.specshow(log_magnitude_spectrogram, sr=sr, hop_length=hop_length, x_axis='time', y_axis='log',
-                             cmap='inferno', vmin=-80, vmax=-20)
+                             cmap='inferno', vmin=-80, vmax=-10)
     plt.colorbar(format='%+2.0f dB')
     plt.xlabel('Time (minutes)')
     plt.ylabel('Frequency (Hz)')
-    plt.ylim(0, 40000)
     plt.xticks(np.arange(0, max(times), 30))
     plt.yscale('linear')
-    y_ticks = (0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000, 30000, 40000)
-    plt.yticks(y_ticks)
+    plt.ylim(0, (np.max(sr)+1)/2)
+    print(np.max(sr))
+    plt.yticks(np.arange(0, (np.max(sr)+1)/2, np.max(sr)/8))
     plt.tight_layout()
     plt.title('Spectrogram')
     output = io.BytesIO()
