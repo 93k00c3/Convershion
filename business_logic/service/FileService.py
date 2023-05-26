@@ -57,9 +57,9 @@ def is_extension_allowed(extension: str):
     return extension in extensions
 
 
-def delete_old_files(folder_name: str, days_old: int):
-    path = os.path.join(upload_path, folder_name)
-    cutoff_date = datetime.now() - timedelta(days=days_old)
+def delete_old_files():
+    path = os.path.join(upload_path)
+    cutoff_date = datetime.now() - timedelta(days=5)
     for root, dirs, files in os.walk(path):
         for file in files:
             file_path = os.path.join(root, file)
