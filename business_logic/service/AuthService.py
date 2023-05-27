@@ -1,4 +1,5 @@
-from flask import request, render_template, redirect
+from flask import request, render_template, redirect, session
+
 
 def login():
     if request.method == 'POST':
@@ -11,7 +12,10 @@ def login():
     else:
         return render_template('login.html')
 
-# def register():
+
+def register(username, password):
+    return True
+
 
 def validate_credentials(username, password):
     valid_username = 'admin'
