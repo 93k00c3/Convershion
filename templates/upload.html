@@ -32,7 +32,7 @@
                 })
                 .then(response => response.json())
                 .then(result => {
-                    graphContainer.innerHTML = `<img src="${result.image_url}" alt="Graph">`;
+                    graphContainer.innerHTML = `<img class="justify-center align-center" src="${result.image_url}" alt="Graph">`;
                 })
                 .catch(error => {
                     console.error('Error:', error);
