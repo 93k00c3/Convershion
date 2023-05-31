@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import io
 import numpy as np
 
-upload_path = 'C:\\Users\\admin\\Documents\\Convershion\\uploads'
+upload_path = '/Users/administrator/Documents/GitHub/Convershion/uploads'
 extensions = ['flac', 'alac', 'mp3', 'wav']
 
 
@@ -58,7 +58,7 @@ def is_extension_allowed(extension: str):
 
 
 def delete_old_files():
-    path = os.path.join(upload_path)
+    path = os.path(upload_path)
     cutoff_date = datetime.now() - timedelta(days=5)
     for root, dirs, files in os.walk(path):
         for file in files:
@@ -91,12 +91,11 @@ def graph_creation(audio_file):
     plt.xticks(np.arange(0, max(times), 30))
     plt.yscale('linear')
     plt.ylim(0, (np.max(sr)+1)/2)
-    print(np.max(sr))
     plt.yticks(np.arange(0, (np.max(sr)+1)/2, np.max(sr)/8))
     plt.tight_layout()
     plt.title('Spectrogram')
     output = io.BytesIO()
-    plt.savefig(output, format='png')
+    plt.savefig(output, format='png', dpi=70)
     output.seek(0)
 
     return output.read()
