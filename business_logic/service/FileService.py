@@ -42,6 +42,9 @@ def join_errors(exception_messages: list):
 
 
 def save_file(folder_name: str, file):
+    # Max file size 50 mb:
+    if file.stat().st.size > 50000000:
+        raise Exception('File size too large maximum file size is 50mb')
     file_name = secure_filename(file.filename)
     extension = file_name.split('.')[1]
     if is_extension_allowed(extension) is False:
