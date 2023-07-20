@@ -70,7 +70,6 @@ def index():
 @app.route('/conversion', methods=["GET", "POST"])
 def conversion():
     folder_path = request.args.get('folder_path')
-    delete_old_files()
     files = os.listdir(folder_path)
     if not os.path.exists(folder_path):
         flash('The folder does not exist')
