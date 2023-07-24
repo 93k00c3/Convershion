@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import os
 
 import numpy
+import soundfile as sf
 from werkzeug.utils import secure_filename
 import librosa
 import librosa.display
@@ -9,7 +10,7 @@ import matplotlib.pyplot as plt
 import io
 import numpy as np
 
-upload_path = '/Users/administrator/Documents/GitHub/Convershion/uploads'
+upload_path = 'C:\\Users\\NBPKOLASA\\PycharmProjects\\Convershion\\uploads'
 extensions = ['flac', 'alac', 'mp3', 'wav']
 
 
@@ -22,16 +23,11 @@ def create_upload_folder_if_doesnt_exist(folder_name: str):
 
 
 def save_files(folder_name: str, files):
-    files_saved = 0
-    exception_messages = []
-    for key in files:
-        try:
-            save_file(folder_name, files[key][0])
-            files_saved += 1
-        except Exception as e:
-            exception_messages.append(str(e))
-    if exception_messages.size > 0:
-        raise Exception(join_errors(exception_messages))
+    try:
+        save_file(folder_name, files)
+        return 1
+    except Exception as e:
+        return str(e)
 
 
 def join_errors(exception_messages: list):
@@ -41,19 +37,20 @@ def join_errors(exception_messages: list):
     return message
 
 
-def save_file(folder_name: str, file):
+def save_file(folder_name: str, files):
     # Max file size 50 mb:
-    if file.stat().st.size > 50000000:
-        raise Exception('File size too large maximum file size is 50mb')
-    file_name = secure_filename(file.filename)
-    extension = file_name.split('.')[1]
-    if is_extension_allowed(extension) is False:
-        raise Exception("Extension: '{}' not allowed, supported extensions: {}".format(extension, extensions))
-    try:
-        create_upload_folder_if_doesnt_exist(folder_name)
-    except:
-        pass
-    file.save(os.path.join(upload_path, os.path.join(folder_name, file_name)))
+    # if file.stat().st.size > 50000000:
+    #     raise Exception('File size too large maximum file size is 50mb')
+    for file in files:
+        file_name = secure_filename(file.filename)
+        extension = file_name.split('.')[-1]
+        if is_extension_allowed(extension) is False:
+            raise Exception("Extension: '{}' not allowed, supported extensions: {}".format(extension, extensions))
+        try:
+            create_upload_folder_if_doesnt_exist(folder_name)
+        except:
+            pass
+        file.save(os.path.join(upload_path, os.path.join(folder_name, file_name)))
 
 
 def is_extension_allowed(extension: str):
@@ -102,3 +99,18 @@ def graph_creation(audio_file):
     output.seek(0)
 
     return output.read()
+
+def graph_creation2(audio_file):
+    data, sample_rate = sf.read(audio_file)
+    Pxx, freqs, bins, im = plt.specgram(data, Fs=sample_rate)
+    plt.xlabel('Time [sec]')
+    plt.xlabel('Time (minutes)')
+    plt.ylabel('Frequency (Hz)')
+    plt.yscale('linear')
+    plt.ylim(0, (np.max(sr) + 1) / 2)
+    plt.yticks(np.arange(0, (np.max(sr) + 1) / 2, np.max(sr) / 8))
+    plt.tight_layout()
+    plt.title('Spectrogram')
+    output = io.BytesIO()
+    plt.savefig(output, format='png', dpi=70)
+    output.seek(0)

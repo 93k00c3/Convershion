@@ -4,7 +4,7 @@ import base64
 
 from flask import Flask, flash, request, redirect, render_template, url_for, jsonify, session
 from business_logic.service.FileConversionService import convert_file
-from business_logic.service.FileService import save_files, delete_old_files, graph_creation
+from business_logic.service.FileService import save_file, delete_old_files, graph_creation
 from business_logic.service.AuthService import login, register
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 
@@ -35,7 +35,7 @@ def load_user(user_id):
 
 
 @app.route('/', methods=["GET", "POST"])
-def upload():
+def upload_files():
     if request.method == "GET":
         return render_template('index.html')
     if not request.files:
@@ -45,16 +45,28 @@ def upload():
     files = request.files.to_dict(flat=False)
 
     if len(files) == 0:
+        flash('No file selected for uploading')
         return render_template('index.html')
 
-    folder_name = config['FILES']['user']
+    folder_name = "user"
+    if not os.path.exists(folder_name):
+        os.mkdir(folder_name)
+    save_file(folder_name, files)
 
     try:
-        save_files(folder_name, files)
+
         flash('Files successfully uploaded')
     except Exception as e:
         flash(str(e))
     return redirect(url_for('conversion', folder_path='uploads/' + folder_name))
+
+
+@app.route('/', methods=["GET", "POST"])
+def upload_file():
+    file = request.files['file']
+    folder_name = "/uploads/user"
+    save_file(folder_name, file)
+    return "File uploaded successfully!"
 
 
 @app.route('/')
@@ -69,8 +81,8 @@ def index():
 
 @app.route('/conversion', methods=["GET", "POST"])
 def conversion():
-    folder_path = request.args.get('folder_path')
-    files = os.listdir(folder_path)
+    folder_path = os.path.join(os.path.normpath(parent_path))
+    files = os.listdir(os.path.normpath(folder_path))
     if not os.path.exists(folder_path):
         flash('The folder does not exist')
         return redirect(request.url)
