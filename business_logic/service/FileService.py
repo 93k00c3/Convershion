@@ -16,10 +16,8 @@ extensions = ['flac', 'alac', 'mp3', 'wav']
 
 def create_upload_folder_if_doesnt_exist(folder_name: str):
     path = os.path.join(upload_path, folder_name)
-    try:
+    if not os.path.exists(path):
         os.mkdir(path)
-    except Exception:
-        raise Exception('Folder \'{}\' already exists'.format(folder_name))
 
 
 def save_files(folder_name: str, files):
@@ -41,6 +39,7 @@ def save_file(folder_name: str, files):
     # Max file size 50 mb:
     # if file.stat().st.size > 50000000:
     #     raise Exception('File size too large maximum file size is 50mb')
+
     for file in files:
         file_name = secure_filename(file.filename)
         extension = file_name.split('.')[-1]
@@ -48,9 +47,10 @@ def save_file(folder_name: str, files):
             raise Exception("Extension: '{}' not allowed, supported extensions: {}".format(extension, extensions))
         try:
             create_upload_folder_if_doesnt_exist(folder_name)
-        except:
+            file.save(os.path.join(upload_path, os.path.join(folder_name, file_name)))
+        except FileNotFoundError:
+            raise Exception("Folder does not exist.")
             pass
-        file.save(os.path.join(upload_path, os.path.join(folder_name, file_name)))
 
 
 def is_extension_allowed(extension: str):

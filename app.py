@@ -42,13 +42,20 @@ def upload_files():
         flash('No files selected for uploading')
         return redirect(request.url)
 
-    files = request.files.to_dict(flat=False)
+    files = request.files.getlist('file')
 
     if len(files) == 0:
         flash('No file selected for uploading')
         return render_template('index.html')
 
-    folder_name = "user"
+    if len(files) == 1:
+        file = files[0]
+        folder_name = f"user"
+        folder_path = f"uploads/{folder_name}"
+        save_file(folder_name, [file])
+        return redirect(url_for('conversion', folder_path=folder_path))
+
+    folder_name = f"user"
     if not os.path.exists(folder_name):
         os.mkdir(folder_name)
     save_file(folder_name, files)
@@ -61,12 +68,9 @@ def upload_files():
     return redirect(url_for('conversion', folder_path='uploads/' + folder_name))
 
 
-@app.route('/', methods=["GET", "POST"])
-def upload_file():
-    file = request.files['file']
-    folder_name = "/uploads/user"
-    save_file(folder_name, file)
-    return "File uploaded successfully!"
+# @app.route('/', methods=["GET", "POST"])
+# def upload_file():
+#
 
 
 @app.route('/')
@@ -81,7 +85,8 @@ def index():
 
 @app.route('/conversion', methods=["GET", "POST"])
 def conversion():
-    folder_path = os.path.join(os.path.normpath(parent_path))
+    folder_name = "user"
+    folder_path = os.path.join(os.path.normpath("uploads"), folder_name)
     files = os.listdir(os.path.normpath(folder_path))
     if not os.path.exists(folder_path):
         flash('The folder does not exist')
