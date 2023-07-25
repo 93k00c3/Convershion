@@ -9,3 +9,8 @@ As of the moment, the application is using
 * librosa
 * numpy
 * pyplot
+
+For application to run be sure to have installed ffmpeg on the system first:
+```
+apt get install ffmpeg
+```
