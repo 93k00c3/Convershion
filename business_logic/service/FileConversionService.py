@@ -1,5 +1,6 @@
 import os
 import subprocess
+from sys import platform
 from flask import request
 extensions = ['flac', 'alac', 'mp3', 'wav']
 
@@ -24,4 +25,7 @@ def convert_audio_files(folder_path, selected_files, conversion_type):
             volume_level = request.form['volume_level']
             command += f" -af volume={volume_level}%"
         command += " " + input_file + " " + output_file
-        subprocess.call(command, shell=True)
+        if platform == "win32":
+            subprocess.call("wsl " + command, shell=True)
+        else:
+            subprocess.call(command, shell=True)
