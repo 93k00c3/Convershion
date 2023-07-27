@@ -101,16 +101,44 @@ def graph_creation(audio_file):
     return output.read()
 
 def graph_creation2(audio_file):
-    data, sample_rate = sf.read(audio_file)
-    Pxx, freqs, bins, im = plt.specgram(data, Fs=sample_rate)
+    data, sr = sf.read(audio_file)
+    # If stereo audio, separate the channels
+    if data.ndim == 2:
+        left_channel = data[:, 0]
+        right_channel = data[:, 1]
+    else:
+        # If the audio is not stereo, duplicate the data to simulate stereo channels
+        left_channel = data
+        right_channel = data
+
+    # Calculate the spectrograms for each channel
+    _, _, _, im_left = plt.specgram(left_channel, Fs=sr)
+    _, _, _, im_right = plt.specgram(right_channel, Fs=sr)
+
+    plt.figure(figsize=(10, 5))
+
+    plt.subplot(1, 2, 1)
     plt.xlabel('Time [sec]')
-    plt.xlabel('Time (minutes)')
     plt.ylabel('Frequency (Hz)')
     plt.yscale('linear')
     plt.ylim(0, (np.max(sr) + 1) / 2)
     plt.yticks(np.arange(0, (np.max(sr) + 1) / 2, np.max(sr) / 8))
+    plt.title('Left Channel Spectrogram')
+    plt.colorbar(im_left, format='%+2.0f dB')
+
+    plt.subplot(1, 2, 2)
+    plt.xlabel('Time [sec]')
+    plt.ylabel('Frequency (Hz)')
+    plt.yscale('linear')
+    plt.ylim(0, (np.max(sr) + 1) / 2)
+    plt.yticks(np.arange(0, (np.max(sr) + 1) / 2, np.max(sr) / 8))
+    plt.title('Right Channel Spectrogram')
+    plt.colorbar(im_right, format='%+2.0f dB')
+
     plt.tight_layout()
-    plt.title('Spectrogram')
+
     output = io.BytesIO()
     plt.savefig(output, format='png', dpi=70)
-    output.seek(0)
+    plt.close()
+
+    return output.read()
