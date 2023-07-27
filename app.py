@@ -4,7 +4,7 @@ import base64
 
 from flask import Flask, flash, request, redirect, render_template, url_for, jsonify, session
 from business_logic.service.FileConversionService import convert_file
-from business_logic.service.FileService import save_file, delete_old_files, graph_creation
+from business_logic.service.FileService import save_file, delete_old_files, graph_creation, graph_creation2
 from business_logic.service.AuthService import login, register
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 
@@ -131,11 +131,18 @@ def register_route():
 
 @app.route('/graph', methods=['POST'])
 def generate_graph():
-    file = request.files['file']
-    audio_file = file.stream
-    graph_data = graph_creation(audio_file)
-    graph_base64 = base64.b64encode(graph_data).decode('utf-8')
-    image_url = 'data:image/png;base64,' + graph_base64
+    files = request.files.getlist('file')
+    if len(files) == 1:
+        file = files[0]
+        audio_file = file.stream
+        graph_data = graph_creation2(audio_file)
+        graph_base64 = base64.b64encode(graph_data).decode('utf-8')
+        image_url = 'data:image/png;base64,' + graph_base64
+    for file in files:
+        audio_file = file.stream
+        graph_data = graph_creation2(audio_file)
+        graph_base64 = base64.b64encode(graph_data).decode('utf-8')
+        image_url = 'data:image/png;base64,' + graph_base64
 
     return jsonify({'image_url': image_url})
 
