@@ -11,7 +11,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 app = Flask(__name__)
 config = configparser.ConfigParser()
 config.read('config/app.ini')
-app.config['UPLOAD_FOLDER'] = config['FILES']['defaultPath']
+app.config['UPLOAD_FOLDER'] = config['FILES']['default_path']
 
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'

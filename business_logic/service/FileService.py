@@ -14,15 +14,15 @@ import configparser
 import numpy as np
 
 config = configparser.ConfigParser()
-upload_path = config['FILES']['upload_path']
 config.read('config/app.ini')
+upload_path = config['FILES']['default_path']
 extensions = ['flac', 'alac', 'mp3', 'wav']
 
 
 def create_upload_folder_if_doesnt_exist(folder_name: str):
     path = os.path.join(upload_path, folder_name)
     if not os.path.exists(path):
-        os.mkdir(path)
+        os.path.normpath(os.mkdir(path))
 
 
 def save_files(folder_name: str, files):
