@@ -6,11 +6,16 @@ import soundfile as sf
 from werkzeug.utils import secure_filename
 import librosa
 import librosa.display
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import io
+import configparser
 import numpy as np
 
-upload_path = 'C:\\Users\\NBPKOLASA\\PycharmProjects\\Convershion\\uploads'
+config = configparser.ConfigParser()
+upload_path = config['FILES']['upload_path']
+config.read('config/app.ini')
 extensions = ['flac', 'alac', 'mp3', 'wav']
 
 
