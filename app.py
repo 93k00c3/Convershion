@@ -1,6 +1,7 @@
 import configparser
 import os
 import base64
+import psycopg2
 
 from flask import Flask, flash, request, redirect, render_template, url_for, jsonify, session
 from business_logic.service.FileConversionService import convert_file
@@ -12,6 +13,16 @@ app = Flask(__name__)
 config = configparser.ConfigParser()
 config.read('config/app.ini')
 app.config['UPLOAD_FOLDER'] = config['FILES']['default_path']
+app.config['DATABASE']=config['FILES']['db_name']
+app.config['USER']=config['FILES']['db_username']
+app.config['PASSWORD']=config['FILES']['db_password']
+app.config['HOST']=config['FILES']['db_host']
+app.config['PORT']=config['FILES']['db_port']
+
+
+conn = psycopg2.connect(database=app.config['DATABASE'], user=app.config['USER'],
+                        password=app.config['PASSWORD'], host=app.config['HOST'], port=app.config['PORT'])
+
 
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -135,12 +146,14 @@ def generate_graph():
     if len(files) == 1:
         file = files[0]
         audio_file = file.stream
+        print("Audio file:", audio_file)
         graph_data = graph_creation2(audio_file)
         graph_base64 = base64.b64encode(graph_data).decode('utf-8')
         image_url = 'data:image/png;base64,' + graph_base64
     for file in files:
         audio_file = file.stream
-        graph_data = graph_creation2(audio_file)
+        print("Audio file:", audio_file)
+        graph_data = graph_creation(audio_file)
         graph_base64 = base64.b64encode(graph_data).decode('utf-8')
         image_url = 'data:image/png;base64,' + graph_base64
 
