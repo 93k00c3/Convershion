@@ -1,5 +1,6 @@
 import os
 import subprocess
+from sys import platform
 from flask import request
 extensions = ['flac', 'alac', 'mp3', 'wav']
 
@@ -15,7 +16,7 @@ def convert_audio_files(folder_path, selected_files, conversion_type):
         input_file = os.path.join(folder_path, file)
         output_file = os.path.splitext(input_file)[0] + '.' + conversion_type
         audio_filter = request.form.get('audio_filter')
-        command = "ffmpeg -i" + " " + input_file + " " + output_file
+        command = "ffmpeg -i"
         if audio_filter == "silencedetect":
             silence_threshold = request.form['silence_threshold']
             silence_duration = request.form['silence_duration']
@@ -23,5 +24,8 @@ def convert_audio_files(folder_path, selected_files, conversion_type):
         elif audio_filter == "volume":
             volume_level = request.form['volume_level']
             command += f" -af volume={volume_level}%"
-
-        subprocess.call(command, shell=True)
+        command += " " + input_file + " " + output_file
+        if platform == "win32":
+            subprocess.call("wsl " + command, shell=True)
+        else:
+            subprocess.call(command, shell=True)

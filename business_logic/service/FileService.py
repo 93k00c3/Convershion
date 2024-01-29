@@ -2,36 +2,35 @@ from datetime import datetime, timedelta
 import os
 
 import numpy
+import soundfile as sf
 from werkzeug.utils import secure_filename
 import librosa
 import librosa.display
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import io
+import configparser
 import numpy as np
 
-upload_path = '/Users/administrator/Documents/GitHub/Convershion/uploads'
+config = configparser.ConfigParser()
+upload_path = config['FILES']['upload_path']
+config.read('config/app.ini')
 extensions = ['flac', 'alac', 'mp3', 'wav']
 
 
 def create_upload_folder_if_doesnt_exist(folder_name: str):
     path = os.path.join(upload_path, folder_name)
-    try:
+    if not os.path.exists(path):
         os.mkdir(path)
-    except Exception:
-        raise Exception('Folder \'{}\' already exists'.format(folder_name))
 
 
 def save_files(folder_name: str, files):
-    files_saved = 0
-    exception_messages = []
-    for key in files:
-        try:
-            save_file(folder_name, files[key][0])
-            files_saved += 1
-        except Exception as e:
-            exception_messages.append(str(e))
-    if exception_messages.size > 0:
-        raise Exception(join_errors(exception_messages))
+    try:
+        save_file(folder_name, files)
+        return 1
+    except Exception as e:
+        return str(e)
 
 
 def join_errors(exception_messages: list):
@@ -41,19 +40,22 @@ def join_errors(exception_messages: list):
     return message
 
 
-def save_file(folder_name: str, file):
+def save_file(folder_name: str, files):
     # Max file size 50 mb:
-    if file.stat().st.size > 50000000:
-        raise Exception('File size too large maximum file size is 50mb')
-    file_name = secure_filename(file.filename)
-    extension = file_name.split('.')[1]
-    if is_extension_allowed(extension) is False:
-        raise Exception("Extension: '{}' not allowed, supported extensions: {}".format(extension, extensions))
-    try:
-        create_upload_folder_if_doesnt_exist(folder_name)
-    except:
-        pass
-    file.save(os.path.join(upload_path, os.path.join(folder_name, file_name)))
+    # if file.stat().st.size > 50000000:
+    #     raise Exception('File size too large maximum file size is 50mb')
+
+    for file in files:
+        file_name = secure_filename(file.filename)
+        extension = file_name.split('.')[-1]
+        if is_extension_allowed(extension) is False:
+            raise Exception("Extension: '{}' not allowed, supported extensions: {}".format(extension, extensions))
+        try:
+            create_upload_folder_if_doesnt_exist(folder_name)
+            file.save(os.path.join(upload_path, os.path.join(folder_name, file_name)))
+        except FileNotFoundError:
+            raise Exception("Folder does not exist.")
+            pass
 
 
 def is_extension_allowed(extension: str):
@@ -100,5 +102,48 @@ def graph_creation(audio_file):
     output = io.BytesIO()
     plt.savefig(output, format='png', dpi=70)
     output.seek(0)
+
+    return output.read()
+
+def graph_creation2(audio_file):
+    data, sr = sf.read(audio_file)
+    # If stereo audio, separate the channels
+    if data.ndim == 2:
+        left_channel = data[:, 0]
+        right_channel = data[:, 1]
+    else:
+        # If the audio is not stereo, duplicate the data to simulate stereo channels
+        left_channel = data
+        right_channel = data
+
+    # Calculate the spectrograms for each channel
+    _, _, _, im_left = plt.specgram(left_channel, Fs=sr)
+    _, _, _, im_right = plt.specgram(right_channel, Fs=sr)
+
+    plt.figure(figsize=(10, 5))
+
+    plt.subplot(1, 2, 1)
+    plt.xlabel('Time [sec]')
+    plt.ylabel('Frequency (Hz)')
+    plt.yscale('linear')
+    plt.ylim(0, (np.max(sr) + 1) / 2)
+    plt.yticks(np.arange(0, (np.max(sr) + 1) / 2, np.max(sr) / 8))
+    plt.title('Left Channel Spectrogram')
+    plt.colorbar(im_left, format='%+2.0f dB')
+
+    plt.subplot(1, 2, 2)
+    plt.xlabel('Time [sec]')
+    plt.ylabel('Frequency (Hz)')
+    plt.yscale('linear')
+    plt.ylim(0, (np.max(sr) + 1) / 2)
+    plt.yticks(np.arange(0, (np.max(sr) + 1) / 2, np.max(sr) / 8))
+    plt.title('Right Channel Spectrogram')
+    plt.colorbar(im_right, format='%+2.0f dB')
+
+    plt.tight_layout()
+
+    output = io.BytesIO()
+    plt.savefig(output, format='png', dpi=70)
+    plt.close()
 
     return output.read()
