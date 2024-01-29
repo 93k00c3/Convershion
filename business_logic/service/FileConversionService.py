@@ -1,31 +1,42 @@
 import os
 import subprocess
-from sys import platform
 from flask import request
-extensions = ['flac', 'alac', 'mp3', 'wav']
+extensions = ['flac', 'm4a', 'mp3', 'wav']
 
 
-def convert_file(folder_path, selected_files, conversion_type):
-    if conversion_type not in extensions:
-        raise Exception('type \'{}\' is not supported')
-    convert_audio_files(folder_path, selected_files, conversion_type)
+def convert_file(folder_path, selected_files, conversion_type, audio_filter=None,
+                 silence_threshold=None, silence_duration=None, volume_level=None):
+    if audio_filter:
+        # Call convert_audio_files when audio_filter is provided
+        return convert_audio_files(folder_path, selected_files, conversion_type,
+                                   audio_filter, silence_threshold,
+                                   silence_duration, volume_level)
+    else:
+        return convert_audio_files(folder_path, selected_files, conversion_type, audio_filter=None,
+                 silence_threshold=None, silence_duration=None, volume_level=None)
 
 
-def convert_audio_files(folder_path, selected_files, conversion_type):
+def convert_audio_files(folder_path, selected_files, conversion_type, audio_filter, silence_threshold=None,
+                        silence_duration=None, volume_level=None):
+    converted_files = []
+
     for file in selected_files:
         input_file = os.path.join(folder_path, file)
         output_file = os.path.splitext(input_file)[0] + '.' + conversion_type
-        audio_filter = request.form.get('audio_filter')
-        command = "ffmpeg -i"
-        if audio_filter == "silencedetect":
-            silence_threshold = request.form['silence_threshold']
-            silence_duration = request.form['silence_duration']
-            command += f" -af silencedetect=n={silence_threshold}dB:d={silence_duration}"
-        elif audio_filter == "volume":
-            volume_level = request.form['volume_level']
-            command += f" -af volume={volume_level}%"
-        command += " " + input_file + " " + output_file
-        if platform == "win32":
-            subprocess.call("wsl " + command, shell=True)
+        if conversion_type == 'm4a':
+            command = f"ffmpeg -i {input_file} -vn -acodec alac {output_file}"
         else:
-            subprocess.call(command, shell=True)
+            command = f"ffmpeg -i {input_file} {output_file}"
+
+        if audio_filter == "silencedetect" and silence_threshold and silence_duration:
+            command += f" -af silencedetect=n={silence_threshold}dB:d={silence_duration}"
+        elif audio_filter == "volume" and volume_level:
+            command += f" -af volume={volume_level}%"
+
+        try:
+            subprocess.run(command, shell=True, check=True)
+            converted_files.append(output_file)
+        except subprocess.CalledProcessError as e:
+            print(f"Conversion error for {input_file}: {e}")
+
+    return converted_files
