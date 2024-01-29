@@ -7,7 +7,7 @@
 {% include 'navbar.html' %}
 <body class="background-color: rgb(30, 41, 59); background-image: radial-gradient(at 0% 100%, rgb(23, 23, 23) 0, transparent 100%);">
     <container>
-            <form method=post enctype="multipart/form-data">
+            <form method="POST" action="/" enctype="multipart/form-data">
                 <div class="grid place-items-top justify-center">
                 <h1 class="text-blue-600">Uploader</h1>
                 </div>
@@ -28,7 +28,7 @@
                                 <p class="text-xs text-gray-500 dark:text-gray-400">MP3, ALAC, FLAC, WAV</p>
                             </div>
                             <input id="dropzone-file" type="file" class="hidden" />
-                            <input type="submit" value="upload"/>
+                            <input type="submit" value="Upload file"/>
                         </label>
                     </div>
             </form>
@@ -46,7 +46,6 @@
             reader.onload = function(e) {
                 const data = new FormData();
                 data.append('file', file);
-
                 fetch('/graph', {
                     method: 'POST',
                     body: data
