@@ -6,7 +6,7 @@
   </head>
   <body>
     <h1>Select files to convert:</h1>
-    <form action="{{ url_for('conversion', folder_path=folder_path) }}" method="post">
+    <form id="conversionForm" action="{{ url_for('conversion', folder_path=folder_path) }}" method="post">
         <ul>
         {% for file in files %}
           <li>
@@ -16,16 +16,16 @@
       </ul>
       <label for="conversion_type">Select conversion type:</label>
       <select name="conversion_type" id="conversion_type">
-        <option value="mp3">MP3</option>
-        <option value="flac">FLAC</option>
-        <option value="alac">ALAC</option>
-        <option value="wav">WAV</option>
+        <option value="mp3" {% if 'mp3' in available_extensions %}style="display:none;"{% endif %}>MP3</option>
+        <option value="flac" {% if 'flac' in available_extensions %}style="display:none;"{% endif %}>FLAC</option>
+        <option value="m4a" {% if 'm4a' in available_extensions %}style="display:none;"{% endif %}>ALAC/M4A</option>
+        <option value="wav" {% if 'wav' in available_extensions %}style="display:none;"{% endif %}>WAV</option>
       </select>
-      <input type="submit" value="Convert">
+      <input type="submit" id="convertButton" value="Convert">
     </form>
   <h2>Audio Filters:</h2>
 
-      <label for="silencedetect_flag">Enable silencedetect:</label>
+      <label for="silencedetect_flag">Enable silence detect:</label>
       <input type="radio" name="audio_filter" value="silencedetect" id="silencedetect_flag">
 
       <div id="silencedetect_params" style="display: none;">
@@ -47,44 +47,66 @@
         <span id="volume_level_value">100%</span><br>
       </div>
 
-      <input type="submit" value="Convert">
+      <input type="submit" id="convertWithFlagsButton" value="Convert">
     </form>
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const silencedetectFlag = document.getElementById('silencedetect_flag');
-        const volumeFlag = document.getElementById('volume_flag');
+  document.addEventListener('DOMContentLoaded', function() {
+    const silencedetectFlag = document.getElementById('silencedetect_flag');
+    const volumeFlag = document.getElementById('volume_flag');
 
-        const silencedetectParams = document.getElementById('silencedetect_params');
-        const volumeParams = document.getElementById('volume_params');
+    const silencedetectParams = document.getElementById('silencedetect_params');
+    const volumeParams = document.getElementById('volume_params');
 
-        const silenceThresholdSlider = document.getElementById('silence_threshold');
-        const silenceThresholdValue = document.getElementById('silence_threshold_value');
-        silenceThresholdValue.textContent = `${silenceThresholdSlider.value} dB`;
+    const conversionForm = document.querySelector('#conversionForm');
+    const convertButton = document.querySelector('#convertButton');
 
-        const volumeLevelSlider = document.getElementById('volume_level');
-        const volumeLevelValue = document.getElementById('volume_level_value');
-        volumeLevelValue.textContent = `${volumeLevelSlider.value}%`;
+    const silenceThresholdSlider = document.getElementById('silence_threshold');
+    const silenceThresholdValue = document.getElementById('silence_threshold_value');
+    silenceThresholdValue.textContent = `${silenceThresholdSlider.value} dB`;
 
-        silencedetectFlag.addEventListener('click', function() {
-          silencedetectParams.style.display = 'block';
-          volumeParams.style.display = 'none';
-        });
+    const volumeLevelSlider = document.getElementById('volume_level');
+    const volumeLevelValue = document.getElementById('volume_level_value');
+    volumeLevelValue.textContent = `${volumeLevelSlider.value}%`;
 
-        volumeFlag.addEventListener('click', function() {
-          silencedetectParams.style.display = 'none';
-          volumeParams.style.display = 'block';
-        });
+    silencedetectFlag.addEventListener('click', function() {
+      silencedetectParams.style.display = 'block';
+      volumeParams.style.display = 'none';
+    });
 
-        silenceThresholdSlider.addEventListener('input', function() {
-          silenceThresholdValue.textContent = `${silenceThresholdSlider.value} dB`;
-        });
+    volumeFlag.addEventListener('click', function() {
+      silencedetectParams.style.display = 'none';
+      volumeParams.style.display = 'block';
+    });
 
-        volumeLevelSlider.addEventListener('input', function() {
-          volumeLevelValue.textContent = `${volumeLevelSlider.value}%`;
-        });
+    silenceThresholdSlider.addEventListener('input', function() {
+      silenceThresholdValue.textContent = `${silenceThresholdSlider.value} dB`;
+    });
+
+    volumeLevelSlider.addEventListener('input', function() {
+      volumeLevelValue.textContent = `${volumeLevelSlider.value}%`;
+    });
+
+    conversionForm.addEventListener('submit', function(event) {
+      event.preventDefault(); // Prevent default form submission
+
+      const formData = new FormData(conversionForm);
+
+      fetch('{{ url_for('conversion', folder_path=folder_path) }}', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Conversion successful:', data);
+        // Update UI or perform actions after successful conversion
+      })
+      .catch(error => {
+        console.error('Conversion error:', error);
+        // Handle errors or display error messages
       });
-    </script>
-  </body>
-</html>
+    });
+  });
+</script>
+
   </body>
 </html>
