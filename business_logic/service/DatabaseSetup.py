@@ -1,65 +1,22 @@
-import psycopg2
-from psycopg2 import OperationalError
-import configparser
+from app import db
 
-config = configparser.ConfigParser()
-config.read('config/app.ini')
-def create_database():
-    try:
-        conn = psycopg2.connect(
-            dbname='postgres',
-            user=DATABASE_CONFIG['user'],
-            password=DATABASE_CONFIG['password'],
-            host=DATABASE_CONFIG['host']
-        )
-        conn.autocommit = True
-        cursor = conn.cursor()
-        cursor.execute("CREATE DATABASE music_database")
-        print("Database created")
+class User(db.Model):
+    __tablename__ = 'users'
 
-    except OperationalError as e:
-        print(f"Error: {e}")
+    user_id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True)
+    password_hash = db.Column(db.String(100))
 
-    finally:
-        if conn:
-            cursor.close()
-            conn.close()
+class MusicFile(db.Model):
+    __tablename__ = 'music_files'
+
+    file_id = db.Column(db.Integer, primary_key=True)
+    file_name = db.Column(db.String(100))
+    file_path = db.Column(db.String(255))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
 
 def create_tables():
-    try:
-        conn = psycopg2.connect(
-            **DATABASE_CONFIG,
-            dbname=DATABASE_CONFIG['dbname']
-        )
-        conn.autocommit = True
-        cursor = conn.cursor()
-
-        # Create users table
-        cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-                            user_id SERIAL PRIMARY KEY,
-                            username VARCHAR(50) UNIQUE,
-                            password_hash VARCHAR(100)
-                        )''')
-
-        # Create music_files table
-        cursor.execute('''CREATE TABLE IF NOT EXISTS music_files (
-                            file_id SERIAL PRIMARY KEY,
-                            file_name VARCHAR(100),
-                            file_path VARCHAR(255),
-                            user_id INTEGER,
-                            FOREIGN KEY (user_id) REFERENCES users(user_id)
-                        )''')
-
-        print("Tables created successfully!")
-
-    except OperationalError as e:
-        print(f"Error: {e}")
-
-    finally:
-        if conn:
-            cursor.close()
-            conn.close()
+    db.create_all()
 
 if __name__ == "__main__":
-    create_database()
     create_tables()
