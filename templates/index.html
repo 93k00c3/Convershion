@@ -14,7 +14,7 @@
                     {# File upload #}
                     <div class="grid items-center justify-center py-4">
                         <label class="block  text-sm font-medium text-gray-900 dark:text-white" for="multiple_files">Upload multiple files</label>
-                        <input class="block w-96 text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="multiple_files" type="file" name="file" accept=".mp3,.flac,.wav,.alac" multiple>
+                        <input class="block w-96 text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="multiple_files" type="file" name="file" accept="mp3,flac,wav,alac" multiple>
                     </div>
                         <div id="graph" class="flex items-center justify-center">
 
@@ -36,30 +36,43 @@
 </body>
 
 <script>
-        const fileInput = document.querySelector('input[type="file"]');
-        const graphContainer = document.getElementById('graph');
+    const fileInput = document.querySelector('input[type="file"]');
+    const graphContainer = document.getElementById('graph');
 
-        fileInput.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            const reader = new FileReader();
+    fileInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
 
-            reader.onload = function(e) {
-                const data = new FormData();
-                data.append('file', file);
-                fetch('/graph', {
-                    method: 'POST',
-                    body: data
-                })
-                .then(response => response.json())
-                .then(result => {
-                    graphContainer.innerHTML = `<img src="${result.image_url}" alt="Graph">`;
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-            };
+        reader.onload = function(e) {
+            const data = new FormData();
+            data.append('file', file, file.name);
+            fetch('/graph', {
+                method: 'POST',
+                body: data
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(result => {
+                if (result && result.image_urls) {
+                    result.image_urls.forEach(item => {
+                        console.log(item.filename, item.image_url);
+                        graphContainer.innerHTML += `<img src="${item.image_url}" alt="${item.filename}">`;
+                    });
+                } else {
+                    throw new Error('Unexpected response format');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        };
 
-            reader.readAsArrayBuffer(file);
-        });
-    </script>
+        reader.readAsArrayBuffer(file);
+    });
+</script>
+
 </html>

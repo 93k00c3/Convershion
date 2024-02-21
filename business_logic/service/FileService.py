@@ -1,19 +1,15 @@
 from datetime import datetime, timedelta
 import os
 
-import numpy
 from werkzeug.utils import secure_filename
 import librosa
 import librosa.display
 import matplotlib.pyplot as plt
 import io
-import configparser
 import numpy as np
 
-config = configparser.ConfigParser()
-upload_path = config['FILES']['upload_path']
-config.read('config/app.ini')
-extensions = ['flac', 'm4a', 'mp3', 'wav']
+upload_path = '/Users/administrator/Documents/GitHub/Convershion/uploads'
+extensions = ['.flac', '.m4a', '.mp3', '.wav']
 
 
 def create_upload_folder_if_doesnt_exist(folder_name: str):
