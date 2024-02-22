@@ -3,15 +3,21 @@ import os
 import base64
 
 from flask import Flask, flash, request, redirect, render_template, url_for, jsonify, session
+from werkzeug.utils import secure_filename
+
 from business_logic.service.FileConversionService import convert_file
 from business_logic.service.FileService import save_file, delete_old_files, graph_creation
 from business_logic.service.AuthService import login, register
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 config = configparser.ConfigParser()
 config.read('config/app.ini')
 app.config['UPLOAD_FOLDER'] = config['FILES']['defaultPath']
+app.config['SQLALCHEMY_DATABASE_URI'] = config['DATABASE']['link']
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -52,7 +58,7 @@ def upload_files():
         file = files[0]
         folder_name = f"user"
         folder_path = f"uploads/{folder_name}"
-        save_file(folder_name, [file])
+        save_file(folder_name, file)
         return redirect(url_for('conversion', folder_path=folder_path))
 
     folder_name = f"user"
@@ -132,19 +138,17 @@ def register_route():
 @app.route('/graph', methods=['POST'])
 def generate_graph():
     files = request.files.getlist('file')
-    if len(files) == 1:
-        file = files[0]
-        audio_file = file.stream
-        graph_data = graph_creation2(audio_file)
-        graph_base64 = base64.b64encode(graph_data).decode('utf-8')
-        image_url = 'data:image/png;base64,' + graph_base64
+    image_urls = []
     for file in files:
-        audio_file = file.stream
-        graph_data = graph_creation2(audio_file)
-        graph_base64 = base64.b64encode(graph_data).decode('utf-8')
-        image_url = 'data:image/png;base64,' + graph_base64
+        if file.filename:
+            filename = secure_filename(file.filename)
+            audio_file = file.stream
+            graph_data = graph_creation(audio_file)
+            graph_base64 = base64.b64encode(graph_data).decode('utf-8')
+            image_url = 'data:image/png;base64,' + graph_base64
+            image_urls.append({'filename': filename, 'image_url': image_url})
 
-    return jsonify({'image_url': image_url})
+    return jsonify({'image_urls': image_urls})
 
 
 if __name__ == '__main__':
