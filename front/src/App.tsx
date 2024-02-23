@@ -1,7 +1,12 @@
 import React, { ChangeEvent, useState } from 'react';
 
-const Uploader: React.FC = () => {
-    const [imageUrls, setImageUrls] = useState<string[]>([]);
+interface ImageData {
+    filename: string;
+    image_url: string;
+}
+
+const App: React.FC = () => {
+    const [imageUrls, setImageUrls] = useState<ImageData[]>([]);
 
     const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
@@ -39,20 +44,12 @@ const Uploader: React.FC = () => {
                 <input type="file" name="file" accept="mp3,flac,wav,alac" multiple onChange={handleFileChange} />
             </label>
             <div id="graph">
-                {imageUrls.map((imageUrl, index) => (
-                    <img key={index} src={imageUrl} alt={`Graph ${index}`} />
+                {imageUrls.map((imageData, index) => (
+                    <img key={index} src={imageData.image_url} alt={`Graph ${index}`} />
                 ))}
             </div>
-            <label htmlFor="dropzone-file">
-                <div>
-                    <span>Click to upload or drag and drop</span>
-                    <p>MP3, ALAC, FLAC, WAV</p>
-                </div>
-                <input id="dropzone-file" type="file" className="hidden" />
-                <input type="submit" value="Upload file"/>
-            </label>
         </div>
     );
 };
 
-export default Uploader;
+export default App;
