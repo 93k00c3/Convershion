@@ -1,3 +1,4 @@
 uploads/
 config/app.ini
 front/build
+node_modules_copy
