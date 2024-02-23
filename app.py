@@ -2,7 +2,7 @@ import configparser
 import os
 import base64
 
-from flask import Flask, flash, request, redirect, render_template, url_for, jsonify, session
+from flask import Flask, flash, request, redirect, render_template, url_for, jsonify, session, send_from_directory
 from werkzeug.utils import secure_filename
 
 from business_logic.service.FileConversionService import convert_file
@@ -11,7 +11,7 @@ from business_logic.service.AuthService import login, register
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 from flask_sqlalchemy import SQLAlchemy
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='front/build')
 config = configparser.ConfigParser()
 config.read('config/app.ini')
 app.config['UPLOAD_FOLDER'] = config['FILES']['defaultPath']
@@ -40,10 +40,15 @@ def load_user(user_id):
     return User(user_id)
 
 
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory(app.static_folder + '/static', path)
+
+
 @app.route('/', methods=["GET", "POST"])
 def upload_files():
     if request.method == "GET":
-        return render_template('index.html')
+        return send_from_directory(app.static_folder, 'index.html')
     if not request.files:
         flash('No files selected for uploading')
         return redirect(request.url)
@@ -52,7 +57,7 @@ def upload_files():
 
     if len(files) == 0:
         flash('No file selected for uploading')
-        return render_template('index.html')
+        return send_from_directory(app.static_folder, 'index.html')
 
     if len(files) == 1:
         file = files[0]
@@ -86,7 +91,7 @@ def index():
     if 'username' in session:
         logged_in = True
         username = session['username']
-    return render_template('index.html', logged_in=logged_in, username=username)
+    return send_from_directory(app.static_folder, 'index.html', logged_in=logged_in, username=username)
 
 
 @app.route('/conversion', methods=["GET", "POST"])
@@ -138,6 +143,7 @@ def register_route():
 @app.route('/graph', methods=['POST'])
 def generate_graph():
     files = request.files.getlist('file')
+    print(files)
     image_urls = []
     for file in files:
         if file.filename:

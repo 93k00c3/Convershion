@@ -7,7 +7,6 @@ extensions = ['flac', 'm4a', 'mp3', 'wav']
 def convert_file(folder_path, selected_files, conversion_type, audio_filter=None,
                  silence_threshold=None, silence_duration=None, volume_level=None):
     if audio_filter:
-        # Call convert_audio_files when audio_filter is provided
         return convert_audio_files(folder_path, selected_files, conversion_type,
                                    audio_filter, silence_threshold,
                                    silence_duration, volume_level)
