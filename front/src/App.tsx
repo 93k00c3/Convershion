@@ -1,4 +1,5 @@
 import React, { ChangeEvent, useState } from 'react';
+import "./App.css";
 
 interface ImageData {
     filename: string;
@@ -37,20 +38,20 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="grid place-items-top justify-center">
-            <h1 className="text-blue-600">Uploader</h1>
-            <label>
-                Upload multiple files:
-                <input type="file" name="file" accept="mp3,flac,wav,alac" multiple onChange={handleFileChange} />
-            </label>
-            <div id="graph">
-                {imageUrls.map((imageData, index) => (
-                    <img key={index} src={imageData.image_url} alt={`Graph ${index}`} />
-                ))}
+        <div className="outer-container"> 
+            <div className="container"> 
+                <label className="upload-button"> 
+                    Upload files
+                    <input type="file" name="file" accept="mp3,flac,wav,alac" multiple onChange={handleFileChange} />
+                </label>
+                <div id="graph"> 
+                    {imageUrls.map((imageData, index) => (
+                        <img key={index} src={imageData.image_url} alt={`Graph ${index}`} />
+                    ))}
+                </div>
             </div>
-            <input type="submit" value="Upload file"/>
         </div>
     );
-};
+};    
 
 export default App;

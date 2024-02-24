@@ -1,38 +1,56 @@
-.App {
-  text-align: center;
+h1 {
+  color: #00adb5; /* Accent color */
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+input[type="file"] {
+  display: none; /* Hide default file input */
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+label {
+  background-color: #00adb5;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 5px;
+}
+.outer-container {
+  background-color: #393e46; /* Slightly lighter background shade */
+  display: flex;          /* Center the container */
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  min-height: 100vh;      /* Make it cover the window height */
 }
 
-.App-link {
-  color: #61dafb;
+.container {
+  width: 500px;
+  margin: 50px auto;
+  text-align: center;
+  background-color: #222831;
+  color: #eee;
+  padding: 20px;
+  border-radius: 5px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+
+.upload-button {
+  background-color: #00adb5;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: inline-block; /* To make width adjust to content */
+  margin-bottom: 15px;      /* Add space below the button */
 }
