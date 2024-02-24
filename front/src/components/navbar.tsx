@@ -36,11 +36,12 @@ const handleLoginClose = () => {
         ) : (
           <>
             <button onClick={handleLoginClick}>Login</button>
-            {showLogin && <Login onClose={handleLoginClose} />}             
+                    
             <a href="/register">Register</a>
           </>
         )}
       </div>
+      {showLogin && <Login onClose={handleLoginClose} />}     
     </nav>
   );
 }

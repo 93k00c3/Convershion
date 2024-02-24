@@ -37,8 +37,8 @@ const App: React.FC = () => {
     };
 
     return (
-        <div>
-            <h1>Uploader</h1>
+        <div className="grid place-items-top justify-center">
+            <h1 className="text-blue-600">Uploader</h1>
             <label>
                 Upload multiple files:
                 <input type="file" name="file" accept="mp3,flac,wav,alac" multiple onChange={handleFileChange} />
@@ -48,6 +48,7 @@ const App: React.FC = () => {
                     <img key={index} src={imageData.image_url} alt={`Graph ${index}`} />
                 ))}
             </div>
+            <input type="submit" value="Upload file"/>
         </div>
     );
 };
