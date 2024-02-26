@@ -42,12 +42,6 @@ const Login: React.FC<LoginProps> = ({ onClose }) => {
           Login
           <div className="w-72 p-4 space-y-4 flex flex-col items-center">
             <div className="space-y-2 w-full">
-              <label
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                htmlFor="username"
-              >
-                Username
-              </label>
               <div className="flex items-center w-full">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -65,19 +59,13 @@ const Login: React.FC<LoginProps> = ({ onClose }) => {
                   <circle cx="12" cy="7" r="4"></circle>
                 </svg>
                 <input
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-10 w-full rounded-md border border-input text-black bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   id="username"
                   placeholder="Username"
                 />
               </div>
             </div>
             <div className="space-y-2 w-full">
-              <label
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                htmlFor="password"
-              >
-                Password
-              </label>
               <div className="flex items-center w-full">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
