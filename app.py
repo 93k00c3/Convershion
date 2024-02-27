@@ -4,6 +4,7 @@ import base64
 
 from flask import Flask, flash, request, redirect, render_template, url_for, jsonify, session, send_from_directory
 from werkzeug.utils import secure_filename
+from flask_cors import CORS
 
 from business_logic.service.FileConversionService import convert_file
 from business_logic.service.FileService import save_file, delete_old_files, graph_creation
@@ -14,10 +15,11 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__, static_folder='front/build')
 config = configparser.ConfigParser()
 config.read('config/app.ini')
-app.config['UPLOAD_FOLDER'] = config['FILES']['defaultPath']
+app.config['UPLOAD_FOLDER'] = config['FILES']['upload_folder']
 app.config['SQLALCHEMY_DATABASE_URI'] = config['DATABASE']['link']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+CORS(app)
 
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -52,31 +54,24 @@ def upload_files():
     if not request.files:
         flash('No files selected for uploading')
         return redirect(request.url)
+    
+    if request.method == "POST":
+        if not request.files:
+            return jsonify({'error': 'No files selected for uploading'}), 400
 
-    files = request.files.getlist('file')
+        files = request.files.getlist('file')
 
-    if len(files) == 0:
-        flash('No file selected for uploading')
-        return send_from_directory(app.static_folder, 'index.html')
+        if not files: 
+            return jsonify({'error': 'No files selected for uploading'}), 400
+        folder_name = "user"
 
-    if len(files) == 1:
-        file = files[0]
-        folder_name = f"user"
-        folder_path = f"uploads/{folder_name}"
-        save_file(folder_name, file)
-        return redirect(url_for('conversion', folder_path=folder_path))
+        if not os.path.exists(folder_name):
+            os.mkdir(folder_name)
 
-    folder_name = f"user"
-    if not os.path.exists(folder_name):
-        os.mkdir(folder_name)
-    save_file(folder_name, files)
+        for file in request.files.getlist('file'):
+            save_file(folder_name, file)
 
-    try:
-
-        flash('Files successfully uploaded')
-    except Exception as e:
-        flash(str(e))
-    return redirect(url_for('conversion', folder_path='uploads/' + folder_name))
+        return jsonify({'success': True, 'message': 'Files successfully uploaded'}), 200
 
 
 # @app.route('/', methods=["GET", "POST"])
@@ -97,8 +92,10 @@ def index():
 @app.route('/conversion', methods=["GET", "POST"])
 def conversion():
     folder_name = "user"
-    folder_path = os.path.join(os.path.normpath("uploads"), folder_name)
+    folder_path = os.path.join(os.path.normpath(app.config['UPLOAD_FOLDER']), os.path.normpath(folder_name))
     files = os.listdir(os.path.normpath(folder_path))
+    files_str = ", ".join(files)
+    print(files_str + "  " + folder_path)
     if not os.path.exists(folder_path):
         flash('The folder does not exist')
         return redirect(request.url)
@@ -107,8 +104,8 @@ def conversion():
         conversion_type = request.form['conversion_type']
         convert_file(folder_path, selected_files, conversion_type)
         flash('Files have been successfully converted')
-        return redirect(url_for('conversion', folder_path=folder_path))
-    return render_template('conversion.html', files=files, folder_path=folder_path)
+        return jsonify({'files': files, 'folder_path': folder_path})
+    return jsonify({'files': files, 'folder_path': folder_path})
 
 
 @app.route('/login', methods=['GET', 'POST'])

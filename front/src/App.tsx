@@ -1,5 +1,6 @@
 import React, { ChangeEvent, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import "./App.css";
 
 interface ImageData {
@@ -14,35 +15,41 @@ const App: React.FC = () => {
     const [imageUrls, setImageUrls] = useState<ImageData[]>([]);
     const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
     const useFileUpload = () => {
-        const navigate = useNavigate();
-
-        const handleFileUpload = useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
-            if (!selectedFiles) return; 
+    const navigate = useNavigate();
+    const [uploadProgress, setUploadProgress] = useState(0); // State for progress
+    const [uploadSuccess, setUploadSuccess] = useState(false);
+    const handleFileUpload = useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
             event.preventDefault();
+            if (!selectedFiles) return;
+    
+            const formData = new FormData();
+            for (let i = 0; i < selectedFiles.length; i++) {
+                formData.append('file', selectedFiles[i]);
+            }
+    
             try {
-                const formData = new FormData();
-                for (let i = 0; i < selectedFiles.length; i++) {
-                    formData.append('file', selectedFiles[i]);
-                }
-
-                const response = await fetch('/', {
-                    method: 'POST',
-                    body: formData
-                });
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                navigate('/conversion', { state: { selectedFiles } }); 
+                const response = await axios.post('http://localhost:5000/', formData, {
+                    onUploadProgress: (progressEvent) => {
+                        const { loaded, total } = progressEvent;
+                        let percentage = Math.floor((loaded * 100) / total);
+                        setUploadProgress(percentage);
+                      },
+                      headers: {
+                           'Content-Type': 'multipart/form-data'
+                         }
+                     }).then((res) => {console.log("Success uploading files");});
+                setUploadSuccess(true);
+                navigate('/conversion');
             } catch (error) {
                 console.error('Error:', error);
-                // Handle errors appropriately
             }
-        }, [selectedFiles, navigate]);
-
-        return { handleFileUpload }; 
+        }, [navigate, selectedFiles]);
+    
+        return { handleFileUpload, uploadProgress, uploadSuccess }; 
     };
-
-    const { handleFileUpload } = useFileUpload(); 
+    
+    const { handleFileUpload, uploadProgress, uploadSuccess } = useFileUpload(); 
+    
 
     // const handleFileUpload = async () => {
     //     if (!selectedFiles) return;
