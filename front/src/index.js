@@ -1,16 +1,22 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import App from './App.tsx';
 import Navbar from './components/navbar.tsx';
+import Conversion from './components/conversion.tsx';
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <Navbar />
-    <App>
-    </App>
+    <Router>
+      <Navbar />
+        <Routes>
+          <Route path="/" exact element={<App />} />
+          <Route path="/conversion" exact element={<Conversion />} />
+        </Routes>
+    </Router>
   </React.StrictMode>
 );
 

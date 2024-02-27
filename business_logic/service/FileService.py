@@ -9,16 +9,16 @@ import io
 import numpy as np
 
 upload_path = '/Users/administrator/Documents/GitHub/Convershion/uploads'
-extensions = ['.flac', '.m4a', '.mp3', '.wav']
+extensions = ['flac', 'm4a', 'mp3', 'wav']
 
 
 def create_upload_folder_if_doesnt_exist(folder_name: str):
     path = os.path.join(upload_path, folder_name)
     if not os.path.exists(path):
         try:
-            os.mkdir(path)
-        except Exception:
-            raise Exception('Folder \'{}\' already exists'.format(folder_name))
+            os.makedirs(path)
+        except Exception as e:
+            raise Exception(f"Failed to create folder '{folder_name}': {str(e)}")
 
 
 def save_files(folder_name: str, files):
@@ -41,6 +41,11 @@ def join_errors(exception_messages: list):
     return message
 
 
+class UnsupportedFileExtensionError(Exception):
+    """Raised when an uploaded file has an unsupported extension."""
+    pass 
+
+
 def save_file(folder_name: str, file):
     try:
         # Max file size 50 mb:
@@ -48,19 +53,24 @@ def save_file(folder_name: str, file):
         file_size = file.tell()
         file.seek(0)
         if file_size > 50000000:
-            raise Exception(f'File size of "{file.filename}" is too large (max 50MB).')
+            raise ValueError(f'File size of "{file.filename}" is too large (max 50MB).')
 
         file_name = secure_filename(file.filename)
-        extension = file_name.split('.')[-1]  # To handle filenames with multiple dots
+        extension = file_name.split('.')[-1]  
 
         if not is_extension_allowed(extension):
-            raise Exception(
+            raise UnsupportedFileExtensionError(
                 f"Extension '{extension}' of file '{file.filename}' is not allowed. Supported extensions: {', '.join(extensions)}")
-
         create_upload_folder_if_doesnt_exist(folder_name)
-        file.save(os.path.join(upload_path, os.path.join(folder_name, file_name)))
+        file.save(os.path.join(upload_path, folder_name, file_name))
+
+    except ValueError as e:
+        raise ValueError(f"Error while processing file '{file.filename}': {e}")
+    except UnsupportedFileExtensionError as e:
+        raise UnsupportedFileExtensionError(f"Error while processing file '{file.filename}': {e}")
     except Exception as e:
         raise Exception(f"Error while processing file '{file.filename}': {str(e)}")
+
 
 def is_extension_allowed(extension: str):
     return extension in extensions
