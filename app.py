@@ -102,7 +102,12 @@ def conversion():
     if request.method == 'POST':
         selected_files = request.form.getlist('files')
         conversion_type = request.form['conversion_type']
-        convert_file(folder_path, selected_files, conversion_type)
+        audio_filter = request.form.get('audio_filter')
+        silence_threshold = request.form.get('silence_threshold')
+        converted_files = convert_file(folder_path, selected_files, conversion_type,
+                                       audio_filter=audio_filter,
+                                       silence_threshold=silence_threshold)
+
         flash('Files have been successfully converted')
         return jsonify({'files': files, 'folder_path': folder_path})
     return jsonify({'files': files, 'folder_path': folder_path})
