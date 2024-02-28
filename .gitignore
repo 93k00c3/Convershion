@@ -3,3 +3,4 @@ config/app.ini
 front/build
 node_modules_copy
 front/node_modules
+node_modules_copy
