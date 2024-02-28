@@ -50,30 +50,6 @@ const App: React.FC = () => {
     
     const { handleFileUpload, uploadProgress, uploadSuccess } = useFileUpload(); 
     
-
-    // const handleFileUpload = async () => {
-    //     if (!selectedFiles) return;
-    //     const formData = new FormData();
-    //     for (let i = 0; i < selectedFiles.length; i++) {
-    //         formData.append('file', selectedFiles[i]);
-    //     }
-    
-    //     try {
-    //         const response = await fetch('/', {
-    //             method: 'POST',
-    //             body: formData
-    //         });
-    //         if (!response.ok) {
-    //             throw new Error('Network response was not ok');
-    //         }
-    //         const navigate = useNavigate(); 
-    //         navigate('/conversion', { state: { selectedFiles } });
-    //     } catch (error) {
-    //         console.error('Error:', error);
-    //     }
-    
-    // };
-
     const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (!files) return;
