@@ -43,7 +43,7 @@ FFMPEG = ('ffmpeg -hide_banner -loglevel {loglevel}'
 
 
 def get_current_user():
-    if 'user_id' in session:  
+    if 'user_id' in session:
         return User.query.get(session['user_id'])
     return None
 
@@ -66,7 +66,7 @@ def upload_files():
     if not request.files:
         flash('No files selected for uploading')
         return redirect(request.url)
-    
+
     if not user:
         return "Please log in to upload files", 401
 
@@ -76,9 +76,9 @@ def upload_files():
 
         files = request.files.getlist('file')
 
-        if not files: 
+        if not files:
             return jsonify({'error': 'No files selected for uploading'}), 400
-        
+
         folder_name = user.folders[0].folder_name
 
         if not os.path.exists(folder_name):
@@ -152,9 +152,9 @@ def index():
 @app.route('/conversion', methods=["GET", "POST"])
 @login_required
 def conversion():
-    user = get_current_user()  
+    user = get_current_user()
     if not user:
-        return "Please log in", 401  
+        return "Please log in", 401
     folder_name = user.folders[0].folder_name
     folder_path = os.path.join(os.path.normpath(app.config['UPLOAD_FOLDER']), os.path.normpath(folder_name))
     files = os.listdir(os.path.normpath(folder_path))
