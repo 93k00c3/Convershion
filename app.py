@@ -1,16 +1,20 @@
 import configparser
 import os
 import base64
+import uuid
 
 from flask import Flask, flash, request, redirect, render_template, url_for, jsonify, session, send_from_directory
 from werkzeug.utils import secure_filename
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
+from werkzeug.security import generate_password_hash, check_password_hash
 
+from business_logic.service.DatabaseSetup import User, db, create_tables
 from business_logic.service.FileConversionService import convert_file
 from business_logic.service.FileService import save_file, delete_old_files, graph_creation
 from business_logic.service.AuthService import login, register
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
-from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+
 
 app = Flask(__name__, static_folder='front/build')
 config = configparser.ConfigParser()
@@ -18,8 +22,14 @@ config.read('config/app.ini')
 app.config['UPLOAD_FOLDER'] = config['FILES']['upload_folder']
 app.config['SQLALCHEMY_DATABASE_URI'] = config['DATABASE']['link']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+app.config['SQLALCHEMY_POOL_PRE_PING'] = True
+app.config['CORS_HEADERS'] = 'Content-Type'
 CORS(app)
+db.init_app(app)
+app.app_context()
+
+with app.app_context():
+    db.create_all()
 
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -32,9 +42,10 @@ FFMPEG = ('ffmpeg -hide_banner -loglevel {loglevel}'
           ' -i "{source}" -f mp3 -ab {bitrate} -vcodec copy "{target}"')
 
 
-class User(UserMixin):
-    def __init__(self, id):
-        self.id = id
+def get_current_user():
+    if 'user_id' in session:  
+        return User.query.get(session['user_id'])
+    return None
 
 
 @login_manager.user_loader
@@ -49,12 +60,16 @@ def serve_static(path):
 
 @app.route('/', methods=["GET", "POST"])
 def upload_files():
+    user = get_current_user()
     if request.method == "GET":
         return send_from_directory(app.static_folder, 'index.html')
     if not request.files:
         flash('No files selected for uploading')
         return redirect(request.url)
     
+    if not user:
+        return "Please log in to upload files", 401
+
     if request.method == "POST":
         if not request.files:
             return jsonify({'error': 'No files selected for uploading'}), 400
@@ -63,7 +78,8 @@ def upload_files():
 
         if not files: 
             return jsonify({'error': 'No files selected for uploading'}), 400
-        folder_name = "user"
+        
+        folder_name = user.folders[0].folder_name
 
         if not os.path.exists(folder_name):
             os.mkdir(folder_name)
@@ -74,9 +90,53 @@ def upload_files():
         return jsonify({'success': True, 'message': 'Files successfully uploaded'}), 200
 
 
-# @app.route('/', methods=["GET", "POST"])
-# def upload_file():
-#
+@app.route('/login', methods=['GET', 'POST'])
+@cross_origin()
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            return jsonify({'success': False, 'error': 'Incorrect username'}), 401
+
+        if not user.check_password(password):
+            return jsonify({'success': False, 'error': 'Incorrect password'}), 401
+
+    return render_template('login.html')
+
+
+@app.route('/register', methods=['POST'])
+@cross_origin()
+def register():
+    if request.method == 'POST':
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        email = data.get('email')
+
+        if not username or not password or not email:
+            return jsonify({'success': False, 'error': 'Please provide username and password'}), 400
+
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            return jsonify({'success': False, 'error': 'Username already exists'}), 409
+
+        try:
+            hashed_password = generate_password_hash(password)
+            new_user = User(username=username, email=email, password_hash=hashed_password)
+            db.session.add(new_user)
+            db.session.commit()
+            return jsonify({'success': True}), 201
+        except IntegrityError as e:
+            db.session.rollback()
+            print(e)
+            return jsonify({'success': False, 'error': 'Username or email already exists'}), 409
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            print(e)
+            return jsonify({'success': False, 'error': 'Database error, please try again'}), 500
 
 
 @app.route('/')
@@ -90,8 +150,12 @@ def index():
 
 
 @app.route('/conversion', methods=["GET", "POST"])
+@login_required
 def conversion():
-    folder_name = "user"
+    user = get_current_user()  
+    if not user:
+        return "Please log in", 401  
+    folder_name = user.folders[0].folder_name
     folder_path = os.path.join(os.path.normpath(app.config['UPLOAD_FOLDER']), os.path.normpath(folder_name))
     files = os.listdir(os.path.normpath(folder_path))
     files_str = ", ".join(files)
@@ -113,33 +177,10 @@ def conversion():
     return jsonify({'files': files, 'folder_path': folder_path})
 
 
-@app.route('/login', methods=['GET', 'POST'])
-def login_route():
-    if request.method == 'POST':
-        return login()
-    else:
-        return render_template('login.html')
-
-
 @app.route('/logout')
 def logout():
-    session.pop('username', None)  # Remove the username from the session
+    session.pop('username', None)
     return redirect('/')
-
-
-@app.route('/register', methods=['GET', 'POST'])
-def register_route():
-    if request.method == 'POST':
-        # Registration logic
-        username = request.form['username']
-        password = request.form['password']
-
-        if register(username, password):
-            session['username'] = username  # Store the username in the session
-            return redirect('/')
-        else:
-            return redirect('/register')  # Redirect to register page with error message
-    return render_template('register.html')
 
 
 @app.route('/graph', methods=['POST'])
@@ -160,4 +201,6 @@ def generate_graph():
 
 
 if __name__ == '__main__':
+    print('start')
     app.run(debug=True)
+    print("test")
