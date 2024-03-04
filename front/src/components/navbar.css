@@ -44,3 +44,16 @@ nav {
 .nav-links li a:hover {
   color: #66ccff;
 }
+
+@keyframes gradientAnimation {
+  0% { 
+   svg #gradient stop:first-child { offset: 0%; }  
+  }
+  100% {
+   svg #gradient stop:first-child { offset: 100%; }  
+  }
+}
+
+.animated-gradient {
+  animation: gradientAnimation 2s infinite alternate;
+}  
