@@ -94,8 +94,9 @@ def upload_files():
 @cross_origin()
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
 
         user = User.query.filter_by(username=username).first()
         if not user:
@@ -104,7 +105,20 @@ def login():
         if not user.check_password(password):
             return jsonify({'success': False, 'error': 'Incorrect password'}), 401
 
-    return render_template('login.html')
+        if user and check_password_hash(user.password_hash, password):
+            session['user_id'] = user.user_id
+            return jsonify({'success': True, 'username': user.username})  # Add username
+        else:
+            return jsonify({'success': False, 'error': 'Invalid credentials'})
+
+
+@app.route('/')
+def index():
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        return jsonify({'loggedIn': True, 'username': user.username})
+    else:
+        return jsonify({'loggedIn': False})
 
 
 @app.route('/register', methods=['POST'])
@@ -139,14 +153,13 @@ def register():
             return jsonify({'success': False, 'error': 'Database error, please try again'}), 500
 
 
-@app.route('/')
-def index():
-    logged_in = False
-    username = None
-    if 'username' in session:
-        logged_in = True
-        username = session['username']
-    return send_from_directory(app.static_folder, 'index.html', logged_in=logged_in, username=username)
+# @app.route('/')
+# def index():
+#     logged_in = False
+#     username = None
+#     if 'user_id' in session:
+#         logged_in = True
+#         username = session['username']
 
 
 @app.route('/conversion', methods=["GET", "POST"])
@@ -178,9 +191,10 @@ def conversion():
 
 
 @app.route('/logout')
+@login_required
 def logout():
-    session.pop('username', None)
-    return redirect('/')
+    session.pop('user_id', None)
+    return jsonify({'success': True})
 
 
 @app.route('/graph', methods=['POST'])
