@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './login.css';
 
 interface LoginProps {
@@ -7,6 +7,57 @@ interface LoginProps {
 
 const Login: React.FC<LoginProps> = ({ onClose }) => {
   const modalRef = useRef<HTMLDivElement>(null);
+  const [errorMessage, setErrorMessage] = useState(''); 
+  const [isError, setIsError] = useState(false); 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [formData, setFormData] = useState({
+    username: '',
+    password: ''
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const { username, password } = formData;
+
+    try {
+      const response = await fetch(`http://localhost:5000/login`, {
+        method: 'POST',
+        headers: {
+
+          Accept: 'application/json',
+  
+          'Content-Type': 'application/json',
+  
+        },
+        body: JSON.stringify({ username, password }),
+      });
+      if (response.ok) { 
+        setIsLoggedIn(true);
+        
+        setTimeout(() => { 
+          onClose();
+        }, 2000);
+      } else {
+        setIsError(true);
+        const errorData = await response.json();
+        setErrorMessage(errorData.error); 
+
+        setTimeout(() => {
+          setIsError(false);
+        }, 2000); 
+      } 
+    } catch (error) {
+      setErrorMessage('Network error during registration'); 
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -24,6 +75,7 @@ const Login: React.FC<LoginProps> = ({ onClose }) => {
   return (
     <div className="login-overlay">
       <div ref={modalRef} className="login-modal">
+      <form onSubmit={handleSubmit}>
         <div className="flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -62,6 +114,8 @@ const Login: React.FC<LoginProps> = ({ onClose }) => {
                   className="flex h-10 w-full rounded-md border border-input text-black bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   id="username"
                   placeholder="Username"
+                  value={formData.username}
+                  onChange={handleChange}
                 />
               </div>
             </div>
@@ -87,15 +141,28 @@ const Login: React.FC<LoginProps> = ({ onClose }) => {
                   id="password"
                   placeholder="Password"
                   type="password"
+                  value={formData.password}
+                  onChange={handleChange}
                 />
               </div>
             </div>
             <button className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full">
               Login
             </button>
+            {isLoggedIn && (
+              <div className="success-message">
+                ✅   
+              </div>
+            )}
+            {isError && (
+              <div className="error-message">
+                ❌ 
+              </div>
+            )}
             <a className="text-sm underline" href="#"></a>
           </div>
         </div>
+        </form>
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ interface RegistrationProps {
 const Registration: React.FC<RegistrationProps> = ({ onClose }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const [errorMessage, setErrorMessage] = useState(''); 
+  const [isError, setIsError] = useState(false); 
   const [isRegistered, setIsRegistered] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
@@ -47,15 +48,18 @@ const Registration: React.FC<RegistrationProps> = ({ onClose }) => {
       });
       if (response.ok) { 
         setIsRegistered(true);
-
         
-        setTimeout(() => {
-          setIsRegistered(false); 
+        setTimeout(() => { 
+          onClose();
         }, 2000);
-        onClose();
       } else {
+        setIsError(true);
         const errorData = await response.json();
         setErrorMessage(errorData.error); 
+
+        setTimeout(() => {
+          setIsError(false);
+        }, 2000); 
       } 
     } catch (error) {
       setErrorMessage('Network error during registration'); 
@@ -144,6 +148,11 @@ const Registration: React.FC<RegistrationProps> = ({ onClose }) => {
             {isRegistered && (
               <div className="success-message">
                 ✅   
+              </div>
+            )}
+            {isError && (
+              <div className="error-message">
+                ❌ 
               </div>
             )}
           </form>
