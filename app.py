@@ -11,7 +11,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from business_logic.service.DatabaseSetup import User, db, create_tables
 from business_logic.service.FileConversionService import convert_file
 from business_logic.service.FileService import save_file, delete_old_files, graph_creation
-from business_logic.service.AuthService import login, register
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
@@ -32,7 +31,6 @@ with app.app_context():
     db.create_all()
 
 login_manager = LoginManager(app)
-login_manager.login_view = 'login'
 
 parent_path = app.config['UPLOAD_FOLDER']
 SECRET_KEY = os.urandom(32)
@@ -51,6 +49,7 @@ def get_current_user():
 @login_manager.user_loader
 def load_user(user_id):
     return User(user_id)
+    pass
 
 
 @app.route('/static/<path:path>')
@@ -139,6 +138,7 @@ def register():
 
         try:
             hashed_password = generate_password_hash(password)
+            user_uuid = str(uuid.uuid4())
             new_user = User(username=username, email=email, password_hash=hashed_password)
             db.session.add(new_user)
             db.session.commit()
@@ -151,15 +151,6 @@ def register():
             db.session.rollback()
             print(e)
             return jsonify({'success': False, 'error': 'Database error, please try again'}), 500
-
-
-# @app.route('/')
-# def index():
-#     logged_in = False
-#     username = None
-#     if 'user_id' in session:
-#         logged_in = True
-#         username = session['username']
 
 
 @app.route('/conversion', methods=["GET", "POST"])
@@ -190,7 +181,7 @@ def conversion():
     return jsonify({'files': files, 'folder_path': folder_path})
 
 
-@app.route('/logout')
+@app.route('/logout', methods=['POST'])
 @login_required
 def logout():
     session.pop('user_id', None)
