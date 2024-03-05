@@ -1,30 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import './navbar.css';
 import logoSvg from './logo.svg';
 import Login from './login.tsx';
 import Registration from './registration.tsx';
+import { AuthContext } from './AuthContext.tsx';
 
 
 
 interface NavbarProps {
   loggedIn: boolean;
-  username?: string;
+  username: string;
+  onLogout: () => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ loggedIn, username }) => {
+ const Navbar: React.FC = () => {
   const [modalState, setModalState] = useState<'login' | 'register' | null>(null);
+  const { isLoggedIn, username, logout } = useContext(AuthContext);
 
   const handleLogout = async () => {
     try {
-      const response = await fetch('/logout', {
-        method: 'POST'
-      });
-  
-      if (response.ok) {
-        window.location.reload();
-      } else {
-        console.error("Logout failed");
-      }
+      await logout();
     } catch (error) {
       console.error("Error during logout:", error);
     }
@@ -50,7 +45,7 @@ const Navbar: React.FC<NavbarProps> = ({ loggedIn, username }) => {
         <li><a href="#">Convershion</a></li>
       </ul>
       <div className="login-register">
-        {loggedIn ? (
+        {isLoggedIn ? (
           <>
             <span className="welcome-message">Welcome, {username}</span> 
             <button onClick={handleLogout}>Logout</button> 
