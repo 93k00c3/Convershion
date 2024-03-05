@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useContext} from 'react';
+import { AuthContext } from './AuthContext.tsx';
 import './login.css';
 
 interface RegistrationProps {
@@ -16,6 +17,7 @@ const Registration: React.FC<RegistrationProps> = ({ onClose }) => {
     password: '',
     confirmPassword: ''
   });
+  const { register } = useContext(AuthContext);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -34,35 +36,18 @@ const Registration: React.FC<RegistrationProps> = ({ onClose }) => {
       return;
     }
 
-    try {
-      const response = await fetch(`http://localhost:5000/register`, {
-        method: 'POST',
-        headers: {
-
-          Accept: 'application/json',
-  
-          'Content-Type': 'application/json',
-  
-        },
-        body: JSON.stringify({ username, email, password }),
-      });
-      if (response.ok) { 
-        setIsRegistered(true);
-        
-        setTimeout(() => { 
-          onClose();
-        }, 2000);
-      } else {
-        setIsError(true);
-        const errorData = await response.json();
-        setErrorMessage(errorData.error); 
-
-        setTimeout(() => {
-          setIsError(false);
-        }, 2000); 
-      } 
-    } catch (error) {
-      setErrorMessage('Network error during registration'); 
+    const auth = await register(username, email, password);
+    if (auth) {
+      setIsRegistered(true);
+      setTimeout(() => {
+        onClose();
+      }, 2000);
+    } else {
+      setIsError(true);
+      setErrorMessage('Registration failed');
+      setTimeout(() => {
+        setIsError(false);
+      }, 2000);
     }
   };
   
