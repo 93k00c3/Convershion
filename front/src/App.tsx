@@ -1,6 +1,8 @@
 import React, { ChangeEvent, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid'; 
+import Cookies from 'js-cookie';
 import "./App.css";
 
 interface ImageData {
@@ -16,7 +18,7 @@ const App: React.FC = () => {
     const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
     const useFileUpload = () => {
     const navigate = useNavigate();
-    const [uploadProgress, setUploadProgress] = useState(0); // State for progress
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadSuccess, setUploadSuccess] = useState(false);
     const handleFileUpload = useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
             event.preventDefault();
@@ -28,15 +30,21 @@ const App: React.FC = () => {
             }
     
             try {
+                if(!Cookies.get('guest_folder')){
+                    const guestFolderId = uuidv4();
+                    Cookies.set('guest_folder', guestFolderId, { expires: 7})
+                    }
                 const response = await axios.post('http://localhost:5000/', formData, {
                     onUploadProgress: (progressEvent) => {
+                        
                         const { loaded, total } = progressEvent;
                         let percentage = Math.floor((loaded * 100) / total);
                         setUploadProgress(percentage);
                       },
                       headers: {
                            'Content-Type': 'multipart/form-data'
-                         }
+                         },
+                         withCredentials: true
                      }).then((res) => {console.log("Success uploading files");});
                 setUploadSuccess(true);
                 navigate('/conversion');
