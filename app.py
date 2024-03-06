@@ -22,8 +22,7 @@ app.config['UPLOAD_FOLDER'] = config['FILES']['upload_folder']
 app.config['SQLALCHEMY_DATABASE_URI'] = config['DATABASE']['link']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_POOL_PRE_PING'] = True
-app.config['CORS_HEADERS'] = 'Content-Type'
-CORS(app)
+CORS(app, supports_credentials=True)
 db.init_app(app)
 app.app_context()
 
@@ -59,15 +58,11 @@ def serve_static(path):
 
 @app.route('/', methods=["GET", "POST"])
 def upload_files():
-    user = get_current_user()
     if request.method == "GET":
         return send_from_directory(app.static_folder, 'index.html')
     if not request.files:
         flash('No files selected for uploading')
         return redirect(request.url)
-
-    if not user:
-        return "Please log in to upload files", 401
 
     if request.method == "POST":
         if not request.files:
@@ -78,15 +73,16 @@ def upload_files():
         if not files:
             return jsonify({'error': 'No files selected for uploading'}), 400
 
-        folder_name = user.folders[0].folder_name
-
-        if not os.path.exists(folder_name):
-            os.mkdir(folder_name)
+        folder_name = None
+        if request.cookies.get('guest_folder'):
+            folder_name = request.cookies.get('guest_folder')
+        elif get_current_user():
+            folder_name = get_current_user().folders[0].folder_name
 
         for file in request.files.getlist('file'):
             save_file(folder_name, file)
 
-        return jsonify({'success': True, 'message': 'Files successfully uploaded'}), 200
+        return jsonify({'success': True, 'message': 'Files successfully uploaded'}, {'Access-Control-Allow-Credentials': True}), 200
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -113,11 +109,24 @@ def login():
 
 @app.route('/')
 def index():
+    CORS(app, resource={
+        r"/*": {
+            "origins": "*"
+        }
+    })
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
         return jsonify({'loggedIn': True, 'username': user.username})
     else:
         return jsonify({'loggedIn': False})
+
+
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(app.static_folder + '/' + path):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
 
 
 @app.route('/register', methods=['POST'])
@@ -139,10 +148,10 @@ def register():
         try:
             hashed_password = generate_password_hash(password)
             user_uuid = str(uuid.uuid4())
-            new_user = User(username=username, email=email, password_hash=hashed_password)
+            new_user = User(username=username, email=email, password_hash=hashed_password, folder_name=user_uuid)
             db.session.add(new_user)
             db.session.commit()
-            return jsonify({'success': True}), 201
+            return jsonify({'success': True}, ), 201
         except IntegrityError as e:
             db.session.rollback()
             print(e)
@@ -154,31 +163,60 @@ def register():
 
 
 @app.route('/conversion', methods=["GET", "POST"])
-@login_required
 def conversion():
-    user = get_current_user()
-    if not user:
-        return "Please log in", 401
-    folder_name = user.folders[0].folder_name
-    folder_path = os.path.join(os.path.normpath(app.config['UPLOAD_FOLDER']), os.path.normpath(folder_name))
-    files = os.listdir(os.path.normpath(folder_path))
-    files_str = ", ".join(files)
-    print(files_str + "  " + folder_path)
-    if not os.path.exists(folder_path):
-        flash('The folder does not exist')
-        return redirect(request.url)
-    if request.method == 'POST':
-        selected_files = request.form.getlist('files')
-        conversion_type = request.form['conversion_type']
-        audio_filter = request.form.get('audio_filter')
-        silence_threshold = request.form.get('silence_threshold')
-        converted_files = convert_file(folder_path, selected_files, conversion_type,
-                                       audio_filter=audio_filter,
-                                       silence_threshold=silence_threshold)
+    send_from_directory(app.static_folder, 'conversion.tsx')
+    if request.method == 'GET':
+        try:
+            folder_name = None
+            if request.cookies.get('guest_folder'):
+                folder_name = request.cookies.get('guest_folder')
+            elif get_current_user():
+                folder_name = get_current_user().folders[0].folder_name
+            folder_path = os.path.join(os.path.normpath(app.config['UPLOAD_FOLDER']), os.path.normpath(folder_name))
+            files = os.listdir(os.path.normpath(folder_path))
+            files_str = ", ".join(files)
+            print(files_str + "  " + folder_path)
+            if not os.path.exists(folder_path):
+                return jsonify({'error': 'The folder does not exist'})
+            return jsonify({'files': files, 'folder_path': folder_path})
+        except (IOError, OSError) as e:
+            return jsonify({'error': f'An error occurred while accessing the folder: {e}'})
+        except Exception as e:
+            return jsonify({'error': 'An unexpected error occurred: {e}'})
 
-        flash('Files have been successfully converted')
+    elif request.method == 'POST':
+        try:
+            folder_name = None
+            if request.cookies.get('guest_folder'):
+                folder_name = request.cookies.get('guest_folder')
+            elif get_current_user():
+                folder_name = get_current_user().folders[0].folder_name
+            folder_path = os.path.join(os.path.normpath(app.config['UPLOAD_FOLDER']), os.path.normpath(folder_name))
+            files = os.listdir(os.path.normpath(folder_path))
+            files_str = ", ".join(files)
+            print(files_str + "  " + folder_path)
+            if not os.path.exists(folder_path):
+                flash('The folder does not exist')
+                return redirect(request.url)
+            if request.method == 'POST':
+                selected_files = request.form.getlist('files')
+                conversion_type = request.form['conversion_type']
+                audio_filter = request.form.get('audio_filter')
+                silence_threshold = request.form.get('silence_threshold')
+                converted_files = convert_file(folder_path, selected_files, conversion_type,
+                                               audio_filter=audio_filter,
+                                               silence_threshold=silence_threshold)
+        except (IOError, OSError) as e:
+            flash(f'An error occurred while accessing the folder: {e}')
+            return redirect(request.url)
+        except Exception as e:
+            flash('An unexpected error occurred.')
+            print(f"Unexpected error in conversion:  {e}")
+            return redirect(request.url)
+
+            flash('Files have been successfully converted')
+            return jsonify({'files': files, 'folder_path': folder_path})
         return jsonify({'files': files, 'folder_path': folder_path})
-    return jsonify({'files': files, 'folder_path': folder_path})
 
 
 @app.route('/logout', methods=['POST'])
@@ -204,6 +242,33 @@ def generate_graph():
 
     return jsonify({'image_urls': image_urls})
 
+
+def get_folder_files_info(folder_path):
+    folder_name = os.path.basename(folder_path)
+    folder_info = {
+        "name": folder_name,
+        "type": "folder",
+        "items": []
+    }
+
+    if os.path.isdir(folder_path):
+        for item in os.listdir(folder_path):
+            item_path = os.path.join(folder_path, item)
+            if os.path.isfile(item_path):
+                file_info = {
+                    "name": item,
+                    "type": "file"
+                }
+                folder_info["items"].append(file_info)
+            elif os.path.isdir(item_path):
+                subfolder_info = {
+                    "name": item,
+                    "type": "folder",
+                    "items": []
+                }
+                folder_info["items"].append(subfolder_info)
+
+    return jsonify(folder_info)
 
 if __name__ == '__main__':
     print('start')
