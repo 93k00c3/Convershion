@@ -7,7 +7,9 @@ import { Navigate } from 'react-router-dom';
 import Navbar from './components/navbar.tsx';
 import Conversion from './components/conversion.tsx';
 import reportWebVitals from './reportWebVitals';
-import { AuthContext, AuthContextProvider } from './components/AuthContext.tsx'; 
+import { AuthContext, AuthContextProvider } from './components/AuthContext.tsx';
+import FolderExplorer from './components/folder/FolderExplorer.tsx'; 
+
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 function ProtectedRoute({ children }) {
@@ -26,7 +28,8 @@ root.render(
         <Navbar />
           <Routes>
             <Route path="/" exact element={<App />} />
-            <Route path="/conversion" exact  element={<ProtectedRoute><Conversion /></ProtectedRoute>} />
+            <Route path="/files" element={<FolderExplorer />} exact />
+            <Route path="/conversion" exact  element={<Conversion />} />
           </Routes>
       </Router>
     </AuthContextProvider>
