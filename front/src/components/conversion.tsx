@@ -1,5 +1,6 @@
 import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
 import axios from 'axios';
+import './conversion.css';
 
 interface ConversionProps {
     files: string[];
@@ -81,6 +82,15 @@ const Conversion: React.FC<ConversionProps> = (availableExtensions) => {
         try {
             const response = await axios.post('http://localhost:5000/conversion', formData);
             console.log(response.data);
+            if(response.status === 200) {
+                console.log("Success converting files");
+                const fetchData = async () => {
+                    const response = await fetch(`http://localhost:5000/conversion`); 
+                    const data = await response.json();
+                    setFetchedFiles(data.files);
+                };
+                fetchData();
+            }
         } catch (error) {
             console.error('Error during conversion:', error);
         }
@@ -88,7 +98,7 @@ const Conversion: React.FC<ConversionProps> = (availableExtensions) => {
 
 
     return (
-            <div className="container mx-auto p-4">
+            <div className="container bg-slate-700 mx-auto p-4">
                 <h1 className="text-2xl font-bold mb-4">Select files to convert:</h1>
                 <form id="conversionForm" onSubmit={handleSubmit}>
                     <ul>
@@ -134,7 +144,7 @@ const Conversion: React.FC<ConversionProps> = (availableExtensions) => {
                         <input type="range" name="silence_threshold" id="silence_threshold" min="-100" max="0" step="1" value="-30" onChange={handleSilenceThresholdChange} className="mb-2"/>
                         <span id="silence_threshold_value" className="mb-4">-30 dB</span>
                         <label htmlFor="silence_duration" className="block mb-2">Silence Duration (seconds):</label>
-                        <input type="number" name="silence_duration" id="silence_duration" min="0" step="1" value="1" className="mb-2" />
+                        <input type="number" name="silence_duration" id="silence_duration" min="0" step="1" value="1" className="mb-2" onChange={handleSilenceDurationChange}/>
                         <span className="block mb-4">For 0: silence from whole track is being deleted</span>
                     </div>
                     
