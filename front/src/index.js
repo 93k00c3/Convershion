@@ -28,8 +28,8 @@ root.render(
         <Navbar />
           <Routes>
             <Route path="/" exact element={<App />} />
-            <Route path="/files" element={<FolderExplorer />} exact />
-            <Route path="/conversion" exact  element={<Conversion />} />
+            <Route path="/files" exact element={<FolderExplorer />}  />
+            <Route path="/conversion" exact element={<Conversion />} />
           </Routes>
       </Router>
     </AuthContextProvider>
