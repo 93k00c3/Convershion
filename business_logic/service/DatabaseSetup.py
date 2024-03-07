@@ -24,8 +24,8 @@ class Folder(db.Model):
     __tablename__ = 'folders'
 
     folder_id = db.Column(db.Integer, primary_key=True)
-    folder_name = db.Column(db.String(100), nullable=False)  # Allow longer folder names
-    parent_folder_id = db.Column(db.Integer, db.ForeignKey('folders.folder_id'))  # For subfolders
+    folder_name = db.Column(db.String(100), nullable=False)
+    parent_folder_id = db.Column(db.Integer, db.ForeignKey('folders.folder_id'))
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     user = db.relationship('User', backref=db.backref('folders', lazy=True))
     subfolders = db.relationship('Folder', back_populates='parent_folder', cascade='all, delete-orphan')
