@@ -1,5 +1,8 @@
 from datetime import datetime, timedelta
+from PIL import Image
+
 import os
+import configparser
 
 from werkzeug.utils import secure_filename
 import librosa
@@ -8,12 +11,16 @@ import matplotlib.pyplot as plt
 import io
 import numpy as np
 
-upload_path = '/Users/administrator/Documents/GitHub/Convershion/uploads'
+config = configparser.ConfigParser()
+config.read('config/app.ini')
+upload_folder = config['FILES']['upload_folder']
 extensions = ['flac', 'm4a', 'mp3', 'wav']
 
 
 def create_upload_folder_if_doesnt_exist(folder_name: str):
-    path = os.path.join(upload_path, folder_name)
+    print("DEBUG: upload_folder: ", upload_folder)
+    print("DEBUG: folder_name:", folder_name)
+    path = os.path.join(upload_folder, folder_name)
     if not os.path.exists(path):
         try:
             os.makedirs(path)
@@ -46,7 +53,7 @@ class UnsupportedFileExtensionError(Exception):
     pass 
 
 
-def save_file(folder_name: str, file):
+def save_file(folder_name, file):
     try:
         # Max file size 50 mb:
         file.seek(0, os.SEEK_END)
@@ -62,7 +69,7 @@ def save_file(folder_name: str, file):
             raise UnsupportedFileExtensionError(
                 f"Extension '{extension}' of file '{file.filename}' is not allowed. Supported extensions: {', '.join(extensions)}")
         create_upload_folder_if_doesnt_exist(folder_name)
-        file.save(os.path.join(upload_path, folder_name, file_name))
+        file.save(os.path.join(upload_folder, folder_name, file_name))
 
     except ValueError as e:
         raise ValueError(f"Error while processing file '{file.filename}': {e}")
@@ -77,7 +84,7 @@ def is_extension_allowed(extension: str):
 
 
 def delete_old_files():
-    path = os.path(upload_path)
+    path = os.path(upload_folder)
     cutoff_date = datetime.now() - timedelta(days=5)
     for root, dirs, files in os.walk(path):
         for file in files:
@@ -93,7 +100,7 @@ def delete_old_files():
                 os.rmdir(dir_path)
 
 
-def graph_creation(audio_file):
+def graph_creation(audio_file, filename):
     audio, sr = librosa.load(audio_file, sr=None)
     n_fft = 2048
     hop_length = int(n_fft)
@@ -101,18 +108,22 @@ def graph_creation(audio_file):
     magnitude_spectrogram = np.abs(spectrogram)
     log_magnitude_spectrogram = librosa.amplitude_to_db(magnitude_spectrogram, ref=np.max)
     times = librosa.frames_to_time(np.arange(log_magnitude_spectrogram.shape[1]), sr=sr, hop_length=hop_length)
-    plt.figure(figsize=(10, 4))
+    plt.rcParams['font.family'] = 'Helvetica'
+    plt.figure(figsize=(10, 4), facecolor='#1b2431')
     librosa.display.specshow(log_magnitude_spectrogram, sr=sr, hop_length=hop_length, x_axis='time', y_axis='log',
                              cmap='inferno', vmin=-80, vmax=-10)
-    plt.colorbar(format='%+2.0f dB')
-    plt.xlabel('Time (minutes)')
-    plt.ylabel('Frequency (Hz)')
+    plt.colorbar(format='%+2.0f dB').ax.tick_params(colors='white')
+    plt.text(0.02, 0.95, 'made in Convershion', color='white', fontsize=12, alpha=0.5,
+             ha='left', va='top', transform=plt.gca().transAxes)
+    plt.xlabel('Time (minutes)', color='white')
+    plt.ylabel('Frequency (Hz)', color='white')
+    plt.tick_params(axis='both', colors='white')
     plt.xticks(np.arange(0, max(times), 30))
     plt.yscale('linear')
     plt.ylim(0, (np.max(sr)+1)/2)
     plt.yticks(np.arange(0, (np.max(sr)+1)/2, np.max(sr)/8))
     plt.tight_layout()
-    plt.title('Spectrogram')
+    plt.title(filename, color='white')
     output = io.BytesIO()
     plt.savefig(output, format='png', dpi=70)
     output.seek(0)
