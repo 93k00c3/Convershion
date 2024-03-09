@@ -2,7 +2,11 @@
   <rect width="24" height="24" fill="none"/>
   <!-- Define linear gradient -->
   <radialGradient id="gradient" cx="0" cy="0.5" r="0.9" fx="0.25" fy="0.25">
-    <stop offset="10%" stop-color="#0fbfda"/>
+    <stop offset="10%" stop-color="#0fbfda">
+                    <animate attributeName="stop-opacity" values="1.4;0.7;1.4" dur="5s" repeatCount="indefinite" />
+                    <animate attributeName="stop-color" from="#0fbfda" to="#0fbfda" dur="5s" repeatCount="indefinite" />
+
+    </stop>
     <stop offset="70%" stop-color="#107d8e"/>
   </radialGradient>
   <!-- Apply linear gradient to path -->

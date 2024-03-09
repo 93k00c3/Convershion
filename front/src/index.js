@@ -2,13 +2,14 @@ import React, { useContext } from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import App from './App.tsx';
+import App from './components/App.tsx';
 import { Navigate } from 'react-router-dom';
 import Navbar from './components/navbar.tsx';
 import Conversion from './components/conversion.tsx';
 import reportWebVitals from './reportWebVitals';
 import { AuthContext, AuthContextProvider } from './components/AuthContext.tsx';
 import FolderExplorer from './components/folder/FolderExplorer.tsx'; 
+import Footer from './components/footer.tsx';
 
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -29,10 +30,11 @@ root.render(
           <Routes>
             <Route path="/" exact element={<App />} />
             <Route path="/files" exact element={<FolderExplorer />}  />
-            <Route path="/conversion" exact element={<Conversion />} />
+            <Route path="/conversion" element={<Conversion />} />
           </Routes>
       </Router>
     </AuthContextProvider>
+    <Footer/>
   </React.StrictMode>
 );
 
