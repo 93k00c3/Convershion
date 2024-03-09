@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from PIL import Image
 
 import os
+import time
 import configparser
 
 from werkzeug.utils import secure_filename
@@ -55,7 +56,6 @@ class UnsupportedFileExtensionError(Exception):
 
 def save_file(folder_name, file):
     try:
-        # Max file size 50 mb:
         file.seek(0, os.SEEK_END)
         file_size = file.tell()
         file.seek(0)
@@ -63,13 +63,21 @@ def save_file(folder_name, file):
             raise ValueError(f'File size of "{file.filename}" is too large (max 50MB).')
 
         file_name = secure_filename(file.filename)
-        extension = file_name.split('.')[-1]  
+        extension = file_name.split('.')[-1]
 
         if not is_extension_allowed(extension):
             raise UnsupportedFileExtensionError(
                 f"Extension '{extension}' of file '{file.filename}' is not allowed. Supported extensions: {', '.join(extensions)}")
+
         create_upload_folder_if_doesnt_exist(folder_name)
-        file.save(os.path.join(upload_folder, folder_name, file_name))
+
+        file_path = os.path.join(upload_folder, folder_name, file_name)
+        if os.path.exists(file_path):
+            timestamp = int(time.time())
+            file_name = f"{os.path.splitext(file_name)[0]}_{timestamp}.{extension}"
+            file_path = os.path.join(upload_folder, folder_name, file_name)
+
+        file.save(file_path)
 
     except ValueError as e:
         raise ValueError(f"Error while processing file '{file.filename}': {e}")
