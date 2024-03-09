@@ -7,10 +7,24 @@ nav {
   background-color: #333;
   color: #fff;
   display: flex;
+  position: relative;
   justify-content: space-between;
   align-items: center;
   padding: 10px;
 }
+
+.convershion {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.convershion a:hover {
+  cursor: pointer;
+  color: #66ccff;
+} 
 
 .logo {
   font-size: 24px;
@@ -21,11 +35,52 @@ nav {
   list-style: none;
   display: flex;
 }
+.dropdown-window {
+  position: absolute;
+  top: 50px;
+  right: 10px;
+  background-color: #333;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+.dropdown-window ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dropdown-window li {
+  margin-bottom: 5px;
+}
+
+.dropdown-window a,
+.dropdown-window button {
+  display: block;
+  padding: 5px 10px;
+  color: #fff;
+  text-decoration: none;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.dropdown-window a:hover,
+.dropdown-window button:hover {
+  background-color: #555;
+}
 
 .nav-links li {
   margin-left: 40px
 }
-
+a {
+  text-decoration: none;
+  font-family: 'Switzer-Bold';
+  color: #fff;
+}
 .nav-links li a {
   color: #fff;
   text-decoration: none;
