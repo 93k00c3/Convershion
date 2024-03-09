@@ -40,8 +40,6 @@ Session(app)
 with app.app_context():
     db.create_all()
 
-
-
 parent_path = app.config['UPLOAD_FOLDER']
 SECRET_KEY = os.urandom(32)
 ALLOWED_EXTENSIONS = {'flac', 'alac', 'mp3', 'wav'}
@@ -82,10 +80,16 @@ def upload_files():
         if not files:
             return jsonify({'error': 'No files selected for uploading'}), 400
         folder_name = get_folder_name()
+        files_check = os.listdir(os.path.join(parent_path, folder_name))
+        if len(files_check) >= 12:
+            return jsonify({'error': 'Maximum number of files exceeded. Please try deleting some.'}), 400
+            print('too many files')
         for file in request.files.getlist('file'):
             save_file(folder_name, file)
 
         return jsonify({'success': True, 'message': 'Files successfully uploaded'}, {'Access-Control-Allow-Credentials': True}), 200
+        graph_response = generate_graph()
+        return jsonify({'success': True, 'message': 'Files successfully uploaded', 'graph_response': graph_response}), 200
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -179,16 +183,34 @@ def conversion():
     if request.method == 'GET':
         files = os.listdir(folder_path)
         return jsonify({'files': files, 'folder_path': folder_path})
-
-    elif request.method == 'POST':
+    if request.method == 'POST':
+        files = os.listdir(folder_path)
+        if len(files) >= 12:
+            return jsonify({'error':'Maximum number of files exceeded. Please try deleting some.'}), 400
+            print('too many files')
         try:
+            selected_files = request.form.getlist('files')
+            conversion_type = request.form.get('conversion_type')
+            audio_filter = request.form.get('audio_filter')
+            silence_threshold = request.form.get('silence_threshold')
+            silence_duration = request.form.get('silence_duration')
+            volume_level = request.form.get('volume_level')
+            mp3_bitrate = request.form.get('mp3_bitrate')
             folder_name = get_folder_name()
-            folder_path = os.path.join(os.path.normpath(app.config['UPLOAD_FOLDER']), os.path.normpath(folder_name))
-            files = os.listdir(os.path.normpath(folder_path))
-            files_str = ", ".join(files)
-            print(files_str + "  " + folder_path)
-            return jsonify({'files': files, 'folder_path': folder_path})
-            return jsonify({'success': True, 'message': 'Conversion successful'})
+
+            folder_path = os.path.join(app.config['UPLOAD_FOLDER'], folder_name)
+            converted_files = convert_file(
+                folder_path,
+                selected_files,
+                conversion_type,
+                audio_filter,
+                silence_threshold,
+                silence_duration,
+                volume_level,
+                mp3_bitrate
+            )
+            return jsonify({'success': True, 'message': 'Conversion successful', 'converted_files': converted_files})
+            print(converted_files)
         except ValueError as e:
             return jsonify({'error': f'Invalid conversion parameters: {e}'}), 400
         except FileNotFoundError as e:
@@ -196,9 +218,10 @@ def conversion():
 
 
 def get_folder_name():
-    current_user = get_current_user()
-    if current_user:
-        return current_user.folder_name
+    user = get_current_user()
+    if user:
+        folder_name = user.folder_name
+        return folder_name
     elif request.cookies.get('guest_folder'):
         return request.cookies.get('guest_folder')
     return None
@@ -224,7 +247,6 @@ def generate_graph():
             graph_base64 = base64.b64encode(graph_data).decode('utf-8')
             image_url = 'data:image/png;base64,' + graph_base64
             image_urls.append({'filename': filename, 'image_url': image_url})
-
     return jsonify({'image_urls': image_urls})
 
 
@@ -278,8 +300,9 @@ def get_folder_files_info(folder_path):
             elif os.path.isdir(item_path):
                 subfolder_info = get_folder_files_info(item_path)
                 folder_info["items"].append(subfolder_info)
-    print('DEBUG:  ', folder_info)
-    return folder_info
+        print('DEBUG:  ', folder_info)
+        all_files = [folder_info]
+        return all_files
 
 
 if __name__ == '__main__':
