@@ -1,0 +1,63 @@
+.space-y-4 {
+    font-family: Arial, sans-serif;
+    background-color: #333;
+    color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  }
+  
+  .peer-disabled\:cursor-not-allowed,
+  .peer-disabled\:opacity-70 {
+    background-color: #222;
+    color: #fff;
+    font-weight: bold;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+  }
+  
+  .w-full,
+  .caption-bottom,
+  .text-sm,
+  .min-w-full {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .w-full thead tr,
+  .caption-bottom thead tr,
+  .text-sm thead tr,
+  .min-w-full thead tr,
+  .w-full tbody tr,
+  .caption-bottom tbody tr,
+  .text-sm tbody tr,
+  .min-w-full tbody tr {
+    text-align: left;
+    border-bottom: 1px solid #444;
+  }
+  
+  .w-full thead tr th,
+  .caption-bottom thead tr th,
+  .text-sm thead tr th,
+  .min-w-full thead tr th {
+    background-color: #222;
+    font-weight: bold;
+  }
+  
+  .w-6.h-6,
+  /* svg[width="24px"][height="24px"] {
+    width: 18px;
+    height: 18px;
+    fill: #aaa;
+  }
+   */
+  
+  .w-6.h-6:hover,
+  svg:hover {
+    fill: #fff;
+    fill-opacity: 30%;
+    cursor: pointer;
+  }
+  
+  .border-b.transition-colors.hover\:bg-muted\/50.data-\[state\=selected\]\:bg-muted {
+    padding-left: 24px;
+  }
