@@ -3,7 +3,9 @@ import axios, { AxiosError } from 'axios';
 import './conversion.css';
 import AnimatedWaves from './folder/waves.tsx';
 import { resolvePath } from 'react-router-dom';
+import Cookies from 'js-cookie';
 import ErrorModal from './folder/ErrorModal.tsx';
+import FolderExplorer from './folder/FolderExplorer.tsx';
 
 interface ConversionProps {
     files: string[];
@@ -26,17 +28,52 @@ const Conversion: React.FC<ConversionProps> = (availableExtensions) => {
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const [showModal, setShowModal] = useState<boolean>(false);
     const [modalMessage, setModalMessage] = useState<string>('');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [showFolderExplorer, setShowFolderExplorer] = useState(false);
+    const [mp3ConversionModalShown, setMp3ConversionModalShown] = useState(false);
 
     useEffect(() => {
-        const fetchData = async () => {
-            const response = await fetch(`http://localhost:5000/conversion`, {
-                credentials: 'include'
-            });
-            const data = await response.json();
-            setFetchedFiles(data.files);
+      const fetchData = async () => {
+          try {
+              const response = await fetch(`http://localhost:5000/conversion`, {
+                  credentials: 'include'
+              });
+              const data = await response.json();
+              if (!response.ok) {
+                const errorMessage = data.error;
+                  if (response.status === 401) {
+                      setShowModal(true);
+                      setModalMessage("Error: " + errorMessage);
+                  }
+                  if (response.status === 404) {
+                      setShowModal(true);
+                      setModalMessage("Error: " + errorMessage);
+                      console.log("Error occurred. Please try again...");
+                  }
+                  if (response.status === 400) {
+                      setShowModal(true);
+                      console.log("Error occurred: ", errorMessage);
+                      setModalMessage("Error: " + errorMessage);
+                  }
+                  throw new Error(response.statusText);
+              }
+              setFetchedFiles(data.files);
+          } catch (error) {
+
+              console.error('Error fetching data:', error);
+          }
         };
-        fetchData();
-    }, []);
+      const checkSession = () => {
+        const sessionCookie = Cookies.get('session');
+        if (sessionCookie) {
+          Cookies.remove('guest_folder');
+        }
+      }
+  
+      fetchData();
+      checkSession();
+  }, []);
+  
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         const isChecked = e.target.checked;
@@ -48,6 +85,10 @@ const Conversion: React.FC<ConversionProps> = (availableExtensions) => {
         } else {
             e.preventDefault();
         }
+    };
+
+    const toggleFolderExplorer = () => {
+      setShowFolderExplorer(!showFolderExplorer);
     };
 
     const handleBitrateChange = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -147,6 +188,13 @@ const Conversion: React.FC<ConversionProps> = (availableExtensions) => {
     };
 
     const handleSubmit = async () => {
+        const hasMp3Files = selectedFiles.some(file => file.toLowerCase().endsWith('.mp3'));
+        if(hasMp3Files && selectedConversionType !== 'mp3' && !mp3ConversionModalShown){
+            setModalMessage('Warning! You are trying to convert from lossy format to losless format which will still result in lossy audio. Are you sure you want to continue?');
+            setShowModal(true);
+            setMp3ConversionModalShown(true);
+            return;
+        }
         const formData = new FormData();
         selectedFiles.forEach(file => formData.append('files', file));
         formData.append('conversion_type', selectedConversionType);
@@ -162,6 +210,7 @@ const Conversion: React.FC<ConversionProps> = (availableExtensions) => {
             formData.append('volume_level', volumeLevel.toString());
         }
         try {
+          setIsGenerating(true);
             const response = await axios.post('http://localhost:5000/conversion', formData, {
                 withCredentials: true
             });
@@ -180,15 +229,18 @@ const Conversion: React.FC<ConversionProps> = (availableExtensions) => {
           if (error.response && error.response.status === 400) {
             setModalMessage(error.response.data.error);
             setShowModal(true);
-            console.log('XDXDDDXd')
           } else {
           console.error('Error:', error);
         }
       }
+      setIsGenerating(false);
     };
 
     const closeModal = () => {
       setShowModal(false);
+      if (modalMessage.includes('Error')) {
+        window.location.href = '/';
+      }
     };
 
 
@@ -315,6 +367,7 @@ const Conversion: React.FC<ConversionProps> = (availableExtensions) => {
                     </form>
                 </div>
             </div>
+            {!isGenerating ? (
             <div className="flex justify-center">
                 <input
                     type="submit"
@@ -324,9 +377,28 @@ const Conversion: React.FC<ConversionProps> = (availableExtensions) => {
                     className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                 />
             </div>
-            <div className='waves'>
-                <AnimatedWaves />
+            ) : (
+            <div className="flex justify-center">
+                <div className="circular-loader self-center"></div>
             </div>
+              )
+            }
+            {Cookies.get('session') ? (
+                <div>
+                    <div className="flex justify-center mt-4">
+                        <button onClick={toggleFolderExplorer} className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                            {showFolderExplorer ? "Hide Files" : "Show Files"}
+                        </button>
+                    </div>
+                    {showFolderExplorer && <FolderExplorer />}
+                </div>
+            ) : (
+
+              <p className='flex pt-4 justify-center'>To see file properties you need to login</p>
+            )}
+            <div className='waves'>
+                        <AnimatedWaves />
+                    </div>
             {showModal && <ErrorModal message={modalMessage} onClose={closeModal} />}
         </div>
     );

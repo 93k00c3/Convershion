@@ -117,7 +117,7 @@ def graph_creation(audio_file, filename):
     log_magnitude_spectrogram = librosa.amplitude_to_db(magnitude_spectrogram, ref=np.max)
     times = librosa.frames_to_time(np.arange(log_magnitude_spectrogram.shape[1]), sr=sr, hop_length=hop_length)
     plt.rcParams['font.family'] = 'Helvetica'
-    plt.figure(figsize=(10, 4), facecolor='#1b2431')
+    plt.figure(figsize=(10, 4), facecolor='#121212')
     librosa.display.specshow(log_magnitude_spectrogram, sr=sr, hop_length=hop_length, x_axis='time', y_axis='log',
                              cmap='inferno', vmin=-80, vmax=-10)
     plt.colorbar(format='%+2.0f dB').ax.tick_params(colors='white')

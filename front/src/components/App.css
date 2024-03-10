@@ -49,10 +49,15 @@ img {
   border-radius: 5px;
 }
 .outer-container {
-  display: flex; 
+  display: flex;
   align-items: center;
   justify-content: center;
   min-height: 80vh;
+}
+@media (max-width:700px) {
+  .outer-container {
+    flex-direction: column;
+  }
 }
 
 @keyframes fade-in {
@@ -85,11 +90,26 @@ img {
   animation: fade-in 0.8s 1.8s forwards cubic-bezier(0.11, 0, 0.5, 0);
 }
 
+
+.dropZone {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 18px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.dropZone.active {
+  border-color: #008000;
+  background-color: #e0ffe0;
+}
+
 .container {
   width: 500px;
   margin: 50px auto;
   text-align: center;
-  background-color: #222831;
+  background-color: #333333;
   color: #eee;
   padding: 20px;
   align-items: center;

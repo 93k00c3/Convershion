@@ -6,6 +6,8 @@ import App from './components/App.tsx';
 import { Navigate } from 'react-router-dom';
 import Navbar from './components/navbar.tsx';
 import Conversion from './components/conversion.tsx';
+import Profile from './components/folder/Profile.tsx';
+import CompareFiles from './components/folder/CompareFiles.tsx';
 import reportWebVitals from './reportWebVitals';
 import { AuthContext, AuthContextProvider } from './components/AuthContext.tsx';
 import FolderExplorer from './components/folder/FolderExplorer.tsx'; 
@@ -30,6 +32,8 @@ root.render(
           <Routes>
             <Route path="/" exact element={<App />} />
             <Route path="/files" exact element={<FolderExplorer />}  />
+            <Route path="/profile" exact element={<Profile />}  />
+            <Route path="/compare" exact element={<CompareFiles />}  />
             <Route path="/conversion" element={<Conversion />} />
           </Routes>
       </Router>

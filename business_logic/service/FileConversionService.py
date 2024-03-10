@@ -20,7 +20,7 @@ def convert_file(folder_path, selected_files, conversion_type, audio_filter=None
             output_file = f"{os.path.splitext(file)[0]}_{timestamp}.{conversion_type}"
             output_file_path = os.path.join(folder_path, output_file)
 
-        command = f"ffmpeg -i -movflags use_metadata_tags -map_metadata 0 {input_file} "
+        command = f"ffmpeg -i  {input_file} -movflags use_metadata_tags -map_metadata 0 "
 
         if conversion_type == 'mp3':
             command += f"-vn -ar 48000 -ac 2 -b:a {mp3_bitrate}k "
@@ -35,7 +35,7 @@ def convert_file(folder_path, selected_files, conversion_type, audio_filter=None
             command += f"-af silencedetect=n={silence_threshold}dB:d={silence_duration} "
         elif audio_filter == "volume" and volume_level:
             volume_level = (int(volume_level)/100)
-            command += f"-filter:a volume={volume_level} "
+            command += f"-af volume={volume_level} "
 
         command += f"{output_file_path}"
 

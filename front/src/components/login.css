@@ -7,17 +7,16 @@
     background-color: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
+    z-index: 100;
     align-items: center;
 }
 
 .login-modal {
-    background-color: black;
-    padding: 20px;
+    padding: 25px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    position:relative;
+    position: relative;
 }
-
 
 input {
     color: black;
@@ -40,4 +39,3 @@ input {
     99% { opacity: 0; transform: translate(-50%, -50%) rotate(0deg)}
     100% { opacity: 0; transform: translate(-50%, -50%) rotate(-30deg)}
 }
-  
