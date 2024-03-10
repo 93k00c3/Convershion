@@ -82,7 +82,8 @@ const Registration: React.FC<RegistrationProps> = ({ onClose }) => {
               >
                 <path d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /> 
               </svg>
-              Registration
+
+              <p className="px-4">Registration</p>
               <div className="w-72 p-4 space-y-4 flex flex-col items-center">
                 <div className="space-y-2 w-full">
                   <div className="flex items-center w-full">

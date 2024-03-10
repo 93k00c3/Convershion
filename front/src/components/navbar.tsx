@@ -17,6 +17,7 @@ const Navbar: React.FC = () => {
   const [modalState, setModalState] = useState<'login' | 'register' | null>(null);
   const { isLoggedIn, username, logout } = useContext(AuthContext);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showLock, setShowLock] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleClickOutside = (event: MouseEvent) => {
@@ -34,7 +35,11 @@ const Navbar: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      setShowLock(true);
+      setTimeout(() => {
+        setShowLock(false);
+        logout();
+      }, 2000);
     } catch (error) {
       console.error("Error during logout:", error);
     }
@@ -51,7 +56,7 @@ const Navbar: React.FC = () => {
         <a href="#">convershion</a>
       </div>
       <div className="login-register">
-        {isLoggedIn ? (
+        {isLoggedIn && !showLock ? (
           <>
             <div
               className="user-icon"
@@ -59,7 +64,7 @@ const Navbar: React.FC = () => {
               onMouseLeave={() => setShowDropdown(false)}
             >
               <FaUserCircle size={24} color="#888" />
-              {showDropdown && (
+              {showDropdown && !modalState && (
               <div className="dropdown-window" ref={dropdownRef}>
                 <ul>
                   <li>
@@ -77,12 +82,15 @@ const Navbar: React.FC = () => {
             </div>
           </>
         ) : (
+          !showLock &&
           <>
-            <button onClick={() => setModalState('login')}>login </button>
+            <button className='pr-4' onClick={() => setModalState('login')}>login </button>
             <button onClick={() => setModalState('register')}>register</button>
           </>
+          
         )}
-      </div>
+      </div>      
+      {showLock && <div className="logout" role="img" aria-label="lock">🔓</div>}
       {modalState === 'login' && <Login onClose={() => setModalState(null)} />}
       {modalState === 'register' && <Registration onClose={() => setModalState(null)} />}
     </nav>

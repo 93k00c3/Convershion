@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import Cookies from 'js-cookie';
 
 interface AuthContextType {
   isLoggedIn: boolean;
@@ -36,7 +37,11 @@ const AuthContextProvider: React.FC = ({ children }: any) => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ username, password }),
+        credentials: 'include' 
       });
+      if (!response.ok){
+        return false;
+      }
 
       if (response.ok) {
         const data = await response.json();
@@ -44,14 +49,14 @@ const AuthContextProvider: React.FC = ({ children }: any) => {
         setUsername(data.username);
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('username', data.username);
-        localStorage.removeItem('guest_folder');
-        return true;
-      } else {
-        return false;
+        Cookies.remove('guest_folder');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+        return;
       }
     } catch (error) {
       console.error('Login error:', error);
-      return false;
     }
   };
 
@@ -63,29 +68,32 @@ const AuthContextProvider: React.FC = ({ children }: any) => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ username, email, password }),
+        credentials: 'include' 
       });
-
+      if (!response.ok){
+        return false;
+      }
       if (response.ok) {
         setIsLoggedIn(true);
         setUsername(username);
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('username', username);
-        localStorage.removeItem('guest_folder');
-        return true;
-      } else {
-        return false;
+        Cookies.remove('guest_folder');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+        return;
       }
     } catch (error) {
       console.error('Registration error:', error);
-      return false;
     }
   };
-
 
   const logout = async () => {
     try {
       const response = await fetch('http://localhost:5000/logout', {
         method: 'POST',
+        credentials: 'include'
       }); 
       if (!response.ok) {
         throw new Error('Network response was not ok');
@@ -97,7 +105,10 @@ const AuthContextProvider: React.FC = ({ children }: any) => {
     setUsername(null);
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('username');
-    localStorage.removeItem('guest_folder');
+    Cookies.remove('guest_folder');
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
   };
 
   return (

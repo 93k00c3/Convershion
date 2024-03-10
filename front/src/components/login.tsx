@@ -57,8 +57,8 @@ const Login: React.FC<LoginProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="login-overlay">
-      <div ref={modalRef} className="login-modal">
+    <div className="login-overlay bg-background">
+      <div ref={modalRef} className="login-modal pr-6" >
         <form onSubmit={handleSubmit}>
           <div className="flex items-center justify-center">
             <svg
@@ -75,12 +75,14 @@ const Login: React.FC<LoginProps> = ({ onClose }) => {
               <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
-            Login
+            <p className="px-4">Login </p>
+            
             <div className="w-72 p-4 space-y-4 flex flex-col items-center">
               <div className="space-y-2 w-full">
                 <div className="flex items-center w-full">
                   <input
-                    className="flex h-10 w-full rounded-md border border-input text-black bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-10 w-full rounded-md border border-input
+                     text-black bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     id="username"
                     placeholder="Username"
                     value={formData.username}

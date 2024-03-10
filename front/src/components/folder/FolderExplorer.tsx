@@ -1,5 +1,8 @@
 import React, { useState, useEffect, FC } from 'react';
 import './FolderExplorer.css';
+import ErrorModal from './ErrorModal.tsx';
+import { FaDownload } from "react-icons/fa";
+import { MdDriveFileRenameOutline, MdOutlineDelete, MdOutlineGraphicEq } from "react-icons/md";
 
 interface File {
   name: string;
@@ -32,26 +35,26 @@ const FolderExplorer: React.FC<FolderExplorerProps> = () => {
   const [error, setError] = useState<string | null>(null);
   const [deleteItem, setDeleteItem] = useState<string | null>(null);
   const [showModal, setShowModal] = useState<boolean>(false);
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       const response = await fetch('http://localhost:5000/files', {
-  //         credentials: 'include',
-  //       });
-  //       const data = await response.json();
-  //       setData(data);
-  //     } catch (error) {
-  //       console.error('Error fetching data:', error);
-  //     }
-  //   fetchData();
-  //   }
-  // }, [data]);
+  const [showRenameModal, setShowRenameModal] = useState<boolean>(false);
+  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const [modalMessage, setModalMessage] = useState<string>('');
+  const [modalRenameMessage, setRenameModalMessage] = useState<string>('');
+
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [renameItem, setRenameItem] = useState<string | null>(null);
+  const [graphUrl, setGraphUrl] = useState<string | null>(null);
+  const [newItemName, setNewItemName] = useState<string>('');
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  
+  
+  
   const toggleFolder = (folderName: string) => {
     setExpandedFolders((prev) => ({
       ...prev,
       [folderName]: !prev[folderName],
     }));
   };
+
   const formatDuration = (seconds: number | undefined ) => {
     if (seconds === undefined) return '';
     const hours = Math.floor(seconds / 3600);
@@ -64,32 +67,171 @@ const FolderExplorer: React.FC<FolderExplorerProps> = () => {
   
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
-  
+
+  function isValidFileName(fileName: string): boolean {
+    const pattern = /^[a-zA-Z0-9_\-\.]+$/;
+    return pattern.test(fileName) && fileName.length < 80;
+  }
+
   const handleRenameClick = (itemName: string) => {
-    console.log("Renaming:", itemName);
-    // Add your logic for renaming here
+    setRenameItem(itemName);
+    setNewItemName(itemName.split('.').slice(0, -1).join('.'));
+    setShowRenameModal(true);
   };
+
+  const handleCancelRename = () => {
+    setShowRenameModal(false);
+    setRenameItem(null);
+    setNewItemName('');
+  };
+  const handleConfirmRename = async () => {
+    if (!isValidFileName(newItemName)) {
+      setRenameModalMessage('Invalid file name, please try again.');
+      return;
+    }
+
+    try {
+      const fileExtension = renameItem!.split('.').pop();
+      const response = await fetch('http://localhost:5000/files/rename', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ itemName: renameItem, newItemName: `${newItemName}.${fileExtension}` }),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to rename item');
+      }
+
+      console.log('Item renamed successfully');
+      setShowModal(false);
+      setRenameItem(null);
+      setNewItemName('');
+    } catch (error) {
+      console.error('Error renaming item:', error);
+    }
+    fetchData();
+  };
+
+
+  const handleGraphClick = async (itemName: string) => {
+    setIsGenerating(true);
+    console.log('Creating graph for:', itemName);
+    setSelectedItem(itemName);
+    try{
+       const response = await fetch('http://localhost:5000/files/graph', {
+         method: 'POST',
+         headers: {
+           'Content-Type': 'application/json',
+         },
+         body: JSON.stringify({ itemName }),
+         credentials: 'include',
+         
+       });
+       const data = await response.json();
+        if (response.ok) {
+          setGraphUrl(data.image_url);
+          setError(null);
+        }
+       if (!response.ok) {
+         throw new Error('Failed to create graph');
+        }
+    } catch (error) {
+      if (error.response && error.response.status === 400) {
+        setModalMessage(error.response.data.error);
+        setShowModal(true);
+    } else {
+        setModalMessage('An unknown error occurred.');
+        setShowModal(true);
+        console.log('Error:', error);
+    }
+    }
+    finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDownloadClick = async (fileName: string) => {
+    try {
+        const response = await fetch(`http://localhost:5000/files/download/${fileName}`, {
+            method: 'GET',
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to download file');
+        }
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Download error:', error);
+        setModalMessage('An error occurred while downloading the file.');
+        setShowModal(true);
+    }
+};
 
   const handleDeleteClick = (itemName: string) => {
-    setDeleteItem(itemName); // Set the item to delete
-    setShowModal(true); // Show the modal
-  };
-
-  const handleDeleteConfirm = () => {
-    console.log("Deleting:", deleteItem);
-    setDeleteItem(null);
-    setShowModal(false);
-  };
-
+    setShowDeleteModal(true); 
+    setDeleteItem(itemName); 
+  };  
   const handleDeleteCancel = () => {
-    setDeleteItem(null);
-    setShowModal(false);
+    setShowDeleteModal(false); 
   };
 
-  const handleGraphClick = (itemName: string) => {
-    console.log("Deleting:", itemName);
-    // Add your logic for deleting here
+  const handleDeleteConfirm = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/files/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ deleteItem: deleteItem! }),
+        credentials: 'include',
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to delete item');
+      }
+  
+      console.log('Item deleted successfully');
+      fetchData();
+      setDeleteItem(null); // Reset deleteItem state
+      setShowDeleteModal(false); // Close delete modal
+    } catch (error) {
+      console.error('Error deleting item:', error);
+    }
   };
+
+  const fetchData = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/files', {
+        credentials: 'include',
+      });
+      const data = await response.json();
+      setData(data);
+      setFolderData(data as Folder);
+      console.log(response);
+      console.log('Data:', data);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('An unknown error occurred.');
+      }
+      console.error('Error fetching data:', error); 
+    }
+  };
+
+  
 
   const renderArrow = (folderName: string) => {
     return expandedFolders[folderName] ? (
@@ -120,25 +262,6 @@ const FolderExplorer: React.FC<FolderExplorerProps> = () => {
   
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/files', {
-          credentials: 'include',
-        });
-        const data = await response.json();
-        setData(data);
-        setFolderData(data as Folder);
-        console.log(response);
-        console.log('Data:', data);
-      } catch (error) {
-        if (error instanceof Error) {
-          setError(error.message);
-        } else {
-          setError('An unknown error occurred.');
-        }
-        console.error('Error fetching data:', error); 
-    }
-    };
     fetchData();
   }, []);
   function isFolder(item: Folder | File): item is Folder {
@@ -192,25 +315,29 @@ const FolderExplorer: React.FC<FolderExplorerProps> = () => {
                 <p>Title: {item.metadata?.title}</p>
               </div>
             )}</td>
-            <td className="p-4 align-middle">{item.type}</td>
-            <td className="p-4 align-middle">
-              <button onClick={() => handleRenameClick(item.name)}>
-                <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M21.2799 6.40005L11.7399 15.94C10.7899 16.89 7.96987 17.33 7.33987 16.7C6.70987 16.07 7.13987 13.25 8.08987 12.3L17.6399 2.75002C17.8754 2.49308 18.1605 2.28654 18.4781 2.14284C18.7956 1.99914 19.139 1.92124 19.4875 1.9139C19.8359 1.90657 20.1823 1.96991 20.5056 2.10012C20.8289 2.23033 21.1225 2.42473 21.3686 2.67153C21.6147 2.91833 21.8083 3.21243 21.9376 3.53609C22.0669 3.85976 22.1294 4.20626 22.1211 4.55471C22.1128 4.90316 22.0339 5.24635 21.8894 5.5635C21.7448 5.88065 21.5375 6.16524 21.2799 6.40005V6.40005Z" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M11 4H6C4.93913 4 3.92178 4.42142 3.17163 5.17157C2.42149 5.92172 2 6.93913 2 8V18C2 19.0609 2.42149 20.0783 3.17163 20.8284C3.92178 21.5786 4.93913 22 6 22H17C19.21 22 20 20.2 20 18V13" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+            {selectedItem === item.name && isGenerating ? (
+              <div className='pt-12'>
+              <div className="circular-loader"></div>
+              </div>
+              ) : (
+                  selectedItem === item.name && graphUrl && (
+                      <div className="graph-container">
+                          <img src={graphUrl} alt="Graph" />
+                      </div>
+                  )
+              )}
+            <td className="p-4 align-middle ">
+              <button className="icon-button" onClick={() => handleDownloadClick(item.name)}>
+                <FaDownload className="icon"/>
               </button>
-              <button onClick={() => handleGraphClick(item.name)}>
-                <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M7 14L8.79689 11.8437C9.50894 10.9893 9.86496 10.562 10.3333 10.562C10.8017 10.562 11.1577 10.9893 11.8698 11.8437L12.1302 12.1563C12.8423 13.0107 13.1983 13.438 13.6667 13.438C14.135 13.438 14.4911 13.0107 15.2031 12.1563L17 10" stroke="#000000" strokeWidth="1.5" strokeLinecap="round"/>
-                  <path d="M22 12C22 16.714 22 19.0711 20.5355 20.5355C19.0711 22 16.714 22 12 22C7.28595 22 4.92893 22 3.46447 20.5355C2 19.0711 2 16.714 2 12C2 7.28595 2 4.92893 3.46447 3.46447C4.92893 2 7.28595 2 12 2C16.714 2 19.0711 2 20.5355 3.46447C21.5093 4.43821 21.8356 5.80655 21.9449 8" stroke="#000000" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
+              <button className="icon-button" onClick={() => handleRenameClick(item.name)}>
+                <MdDriveFileRenameOutline className="icon"/>
               </button>
-              <button onClick={() => handleDeleteClick(item.name)}>
-                <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M13.5 3H12H8C6.34315 3 5 4.34315 5 6V18C5 19.6569 6.34315 21 8 21H11M13.5 3L19 8.625M13.5 3V7.625C13.5 8.17728 13.9477 8.625 14.5 8.625H19M19 8.625V11.8125" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M15 16L17.5 18.5M20 21L17.5 18.5M17.5 18.5L20 16M17.5 18.5L15 21" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+              <button className="icon-button" onClick={() => handleGraphClick(item.name)}>
+                <MdOutlineGraphicEq className="icon"/>
+              </button>
+              <button className="icon-button" onClick={() => handleDeleteClick(item.name)}>
+                <MdOutlineDelete className="icon"/>
               </button>
             </td>
           </tr>
@@ -220,15 +347,14 @@ const FolderExplorer: React.FC<FolderExplorerProps> = () => {
   };
 
   if (data === null) {
-    return null; // Render nothing when data is null
+    return null;
   }
 
   return (
     <div className='folder-explorer'>
     <div className="space-y-4 m-6 bg-slate-700 rounded-s">
       <div className="space-y-2">
-        <label htmlFor="folders" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-          Folders
+        <label htmlFor="folders" className="text-sm ml-2 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
         </label>
         <div className="relative w-full overflow-auto">
           <table className="w-full caption-bottom text-sm min-w-full">
@@ -246,7 +372,29 @@ const FolderExplorer: React.FC<FolderExplorerProps> = () => {
           </table>
         </div>
       </div>
-      {showModal && (
+      {showRenameModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="absolute inset-0 bg-gray-800 opacity-50"></div>
+          <div className="p-4 bg-zinc-900 w-96 rounded z-50">
+            <p>Enter the new name:</p>
+            <input
+              type="text"
+              value={newItemName}
+              onChange={(e) => setNewItemName(e.target.value)}
+              className="mt-2 p-2 w-full"
+            />
+            <div className="mt-4 flex justify-center">
+              <button onClick={handleConfirmRename} className="mr-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                Confirm
+              </button>
+              <button onClick={handleCancelRename} className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDeleteModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="absolute inset-0 bg-gray-800 opacity-50"></div>
           <div className="p-4 bg-zinc-900 rounded z-50">
@@ -258,19 +406,12 @@ const FolderExplorer: React.FC<FolderExplorerProps> = () => {
           </div>
         </div>
       )}
+      {showModal && (
+        <ErrorModal message={modalMessage} onClose={() => setShowModal(false)} />
+      )}
     </div>
   </div>
   );
 };
 
 export default FolderExplorer;
-
-
-// const jsonData: Folder[] = [
-//   { "name": "Photos", "type": "folder", "items": [ 
-//       { "name": "Photo1.jpg", "type": "file" },
-//       { "name": "Photo2.jpg", "type": "file" },
-//       { "name": "Documents", "type": "folder", "items": [] }
-//     ]
-//   }
-// ];
