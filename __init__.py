@@ -22,20 +22,19 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 app = Flask(__name__, static_folder='front/build')
 login_manager = LoginManager()
 login_manager.init_app(app)
-
+config = configparser.ConfigParser()
 app.app_context()
 CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3000"}})
 config = configparser.ConfigParser()
 config.read('config/app.ini')
-app.config['UPLOAD_FOLDER'] = config['FILES']['upload_folder']
 app.config['SQLALCHEMY_DATABASE_URI'] = config['DATABASE']['link']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_POOL_PRE_PING'] = True
 app.config['SESSION_TYPE'] = 'filesystem'
-# app.config['SESSION_COOKIE_HTTPONLY'] = True
-# app.config['SESSION_COOKIE_SECURE'] = True
+app.config['UPLOAD_FOLDER'] = config['FILES']['upload_folder']
+app.config['SESSION_COOKIE_HTTPONLY'] = False
+app.config['SESSION_COOKIE_SECURE'] = False
 app.config['SESSION_PERMANENT'] = False
-parent_path = app.config['UPLOAD_FOLDER']
 SECRET_KEY = os.urandom(32)
 ALLOWED_EXTENSIONS = {'flac', 'alac', 'mp3', 'wav'}
 app.config['SECRET_KEY'] = SECRET_KEY
@@ -43,10 +42,13 @@ FFMPEG = ('ffmpeg -hide_banner -loglevel {loglevel}'
           ' -i "{source}" -f mp3 -ab {bitrate} -vcodec copy "{target}"')
 Session(app)
 db.init_app(app)
+migrate = Migrate(app, db)
 
 with app.app_context():
-    migrate = Migrate(app, db)
+    migrate.init_app(app)
 
+with app.app_context():
+    db.create_all()
 
 def get_current_user():
     if 'user_id' in session:
@@ -90,8 +92,8 @@ def upload_files():
         if not folder_name:
             return jsonify({'error': 'Your folder was not found. Please try refreshing the page or uploading the file again'}), 404
         print(folder_name, 'before of path exists')
-        if os.path.exists(os.path.join(parent_path, folder_name)):
-            files_check = os.listdir(os.path.join(parent_path, folder_name))
+        if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], folder_name)):
+            files_check = os.listdir(os.path.join(app.config['UPLOAD_FOLDER'], folder_name))
             if len(files_check) >= 12:
                 return jsonify({'error': 'Maximum number of files exceeded. Please try deleting some.'}), 400
         print(folder_name, 'before save')
@@ -165,25 +167,23 @@ def register():
             return jsonify({'success': False, 'error': 'Database error, please try again'}), 500
 
 
-@app.route('/profile', methods=['GET'])
-@login_required
-def view_profile():
-    user = get_current_user()
-    if not user:
-        abort(401)
-        return "Please log in", 401
+    @app.route('/profile', methods=['GET'])
+    def view_profile():
+        user = get_current_user()
+        if not user:
+            abort(401)
+            return "Please log in", 401
 
-    user_info = {
-        'username': user.username,
-        'email': user.email,
-        'firstname': user.firstname,
-        'surname': user.surname
-    }
-    return jsonify(user_info), 200
+        user_info = {
+            'username': user.username,
+            'email': user.email,
+            'firstname': user.firstname,
+            'surname': user.surname
+        }
+        return jsonify(user_info), 200
 
 
 @app.route('/profile', methods=['PUT'])
-@login_required
 def edit_profile():
     user = get_current_user()
     print(user)
@@ -192,22 +192,25 @@ def edit_profile():
         return "Please log in", 401
 
     data = request.get_json()
+    print(data)
     new_username = data.get('username')
     new_firstname = data.get('firstname')
+    print(new_firstname)
     new_surname = data.get('surname')
     new_email = data.get('email')
 
-    if new_username:
+    if new_username is not None and new_username.strip() != '':
         user.username = new_username
-    if new_email:
+    if new_email is not None and new_email.strip() != '':
         user.email = new_email
-    if new_firstname:
+    if new_firstname is not None and new_firstname.strip() != '':
         user.firstname = new_firstname
-    if new_surname:
+    if new_surname is not None and new_surname.strip() != '':
         user.surname = new_surname
 
     try:
         db.session.commit()
+        print("User after update:", user)
         return jsonify({'message': 'Profile updated successfully'}), 200
     except Exception as e:
         db.session.rollback()
@@ -215,7 +218,6 @@ def edit_profile():
 
 
 @app.route('/profile/change-password', methods=['PUT'])
-@login_required
 def change_password():
     current_user = get_current_user()
 

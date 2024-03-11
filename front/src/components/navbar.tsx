@@ -63,7 +63,7 @@ const Navbar: React.FC = () => {
               onMouseEnter={() => setShowDropdown(true)}
               onMouseLeave={() => setShowDropdown(false)}
             >
-              <FaUserCircle size={24} color="#888" />
+              <FaUserCircle size={36} color="#888" />
               {showDropdown && !modalState && (
               <div className="dropdown-window" ref={dropdownRef}>
                 <ul>
