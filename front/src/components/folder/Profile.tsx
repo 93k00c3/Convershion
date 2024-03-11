@@ -14,6 +14,39 @@ const EditProfileModal = ({ isOpen, onClose }) => {
 
   const handleSaveChanges = async (event) => {
     event.preventDefault(); 
+    if (newUsername.includes('\'') || newEmail.includes('\'') || newFirstName.includes('\'') || newSurname.includes('\'')) {
+        setIsError(true);
+        setErrorMessage('Invalid input');
+        setTimeout(() => {
+            setIsError(false);
+        }, 2000);
+        return;
+        }
+
+        const requestData = {
+            username: newUsername,
+            email: newEmail,
+            firstname: newFirstName,
+            surname: newSurname,
+          };
+
+          if (newFirstName) {
+            requestData.firstname = newFirstName;
+          }
+        
+          if (newSurname) {
+            requestData.surname = newSurname;
+          }
+
+            if (newEmail) {
+                requestData.email = newEmail;
+            }
+
+            if (newUsername) {
+                requestData.username = newUsername;
+            }
+
+
     if (!newUsername && !newEmail && !newFirstName && !newSurname) {
         setIsError(true);
             setErrorMessage('No changes made');
@@ -23,14 +56,10 @@ const EditProfileModal = ({ isOpen, onClose }) => {
         return;  // Don't send a request
     }
     try {
-      const response = await axios.put("http://localhost:5000/profile", {
-        username: newUsername,
-        firstName: newFirstName,
-        surname: newSurname,
-        email: newEmail,
-      },
+      const response = await axios.put("http://localhost:5000/profile", 
+        requestData,
       { withCredentials: true });
-      console.log("Profile updated successfully:", response.data);
+      console.log("Profile updated successfully:", requestData);
       onClose();
       
     } catch (error) {
@@ -58,6 +87,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
           <input
             type="text"
             id="newUsername"
+            placeholder="Change username"
             value={newUsername}
             onChange={(e) => setNewUsername(e.target.value)}
           />
@@ -67,6 +97,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
           <input
             type="text"
             id="newEmail"
+            placeholder="Change email"
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
           />
@@ -76,6 +107,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
           <input
             type="text"
             id="newFirstName"
+            placeholder="Change first name"
             value={newFirstName}
             onChange={(e) => setNewFirstName(e.target.value)}
           />
@@ -85,6 +117,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
           <input
             type="text"
             id="newSurname"
+            placeholder="Change surname"
             value={newSurname}
             onChange={(e) => setNewSurname(e.target.value)}
           />
@@ -106,7 +139,8 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
 
   const handleSaveChanges = async () => {
     if (newPassword !== confirmPassword || newPassword === '') {
-      console.log('Passwords do not match');
+        setIsError(true);
+        setErrorMessage('Passwords do not match');
       return;
     }
     try {
@@ -123,7 +157,8 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
             setTimeout(() => {
               setIsError(false);
             }, 2000);
-      console.error("Error updating user password:", error);
+            setIsError(true);
+            setErrorMessage("Error updating user password:", error);
     }
   };
 
@@ -218,7 +253,7 @@ const Profile = () => {
             <strong>Username:</strong> {userData.username}
           </p>
           <p>
-            <strong>Full name:</strong> {userData.firstName} {userData.lastName}
+            <strong>Full name:</strong> {userData.firstname} {userData.surname}
           </p>
           <p>
             <strong>Email:</strong> {userData.email}

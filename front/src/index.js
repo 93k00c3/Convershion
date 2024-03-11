@@ -13,6 +13,14 @@ import { AuthContext, AuthContextProvider } from './components/AuthContext.tsx';
 import FolderExplorer from './components/folder/FolderExplorer.tsx'; 
 import Footer from './components/footer.tsx';
 
+function NotFound() {
+  return (
+    <div>
+      <h1 className='not-found'>404 Not Found</h1>
+    </div>
+  );
+
+}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 function ProtectedRoute({ children }) {
@@ -35,6 +43,7 @@ root.render(
             <Route path="/profile" exact element={<Profile />}  />
             <Route path="/compare" exact element={<CompareFiles />}  />
             <Route path="/conversion" element={<Conversion />} />
+            <Route path="*" exact element={<NotFound></NotFound>} />
           </Routes>
       </Router>
     </AuthContextProvider>
