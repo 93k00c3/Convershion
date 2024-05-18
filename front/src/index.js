@@ -45,9 +45,9 @@ root.render(
             <Route path="/conversion" element={<Conversion />} />
             <Route path="*" exact element={<NotFound></NotFound>} />
           </Routes>
+          <Footer/>
       </Router>
     </AuthContextProvider>
-    <Footer/>
   </React.StrictMode>
 );
 

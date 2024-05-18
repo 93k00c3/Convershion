@@ -40,7 +40,7 @@ const AuthContextProvider: React.FC = ({ children }: any) => {
         credentials: 'include' 
       });
       if (!response.ok){
-        return false;
+        return { response: response, success: false };
       }
 
       if (response.ok) {
@@ -53,10 +53,12 @@ const AuthContextProvider: React.FC = ({ children }: any) => {
         setTimeout(() => {
           window.location.reload();
         }, 1500);
-        return;
+        return { response: response, success: true };
       }
     } catch (error) {
       console.error('Login error:', error);
+      return { response: error, success: false };
+
     }
   };
 
@@ -70,9 +72,6 @@ const AuthContextProvider: React.FC = ({ children }: any) => {
         body: JSON.stringify({ username, email, password }),
         credentials: 'include' 
       });
-      if (!response.ok){
-        return false;
-      }
       if (response.ok) {
         setIsLoggedIn(true);
         setUsername(username);
@@ -82,11 +81,14 @@ const AuthContextProvider: React.FC = ({ children }: any) => {
         setTimeout(() => {
           window.location.reload();
         }, 1500);
-        return;
+        return { response: response, success: true };
       }
-    } catch (error) {
-      console.error('Registration error:', error);
-    }
+      if (!response.ok){
+        return { response: response, success: false };
+      }} catch (error) {
+        console.error('Registration error:', error);
+        return { error: error, success: false };
+      }
   };
 
   const logout = async () => {
@@ -96,19 +98,24 @@ const AuthContextProvider: React.FC = ({ children }: any) => {
         credentials: 'include'
       }); 
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        return { response: response, success: false };
       }
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-    setIsLoggedIn(false);
-    setUsername(null);
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('username');
-    Cookies.remove('guest_folder');
-    setTimeout(() => {
-      window.location.reload();
-    }, 1500);
+      if(response.ok) {
+        setIsLoggedIn(false);
+        setUsername(null);
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('username');
+        Cookies.remove('guest_folder');
+        Cookies.remove('session');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+        return { response: response, success: true };
+        }
+        } catch (error) {
+          console.error('Logout error:', error);
+          return { response: error, success: false };
+        }
   };
 
   return (

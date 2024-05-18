@@ -109,13 +109,14 @@ img {
   width: 500px;
   margin: 50px auto;
   text-align: center;
-  background-color: #333333;
+  flex-direction: column;
   color: #eee;
   padding: 20px;
   align-items: center;
   justify-content: center;
   border-radius: 5px;
 }
+
 
 
 .upload-button {
@@ -126,4 +127,21 @@ img {
   cursor: pointer;
   display: inline-block;
   margin-bottom: 15px;
+}
+
+
+.compare-link-container {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.compare-link {
+  font-family: 'Switzer-Light';
+  display: inline-block;
+  font-size: 16px;
+  text-decoration: none;
+}
+
+.compare-link span {
+  margin-left: 5px;
 }

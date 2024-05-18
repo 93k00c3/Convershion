@@ -4,6 +4,7 @@ import axios, { AxiosError } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import Cookies from 'js-cookie';
 import "./App.css";
+import { Link } from 'react-router-dom';
 import ErrorModal from './folder/ErrorModal.tsx';
 import AnimatedWaves from './folder/waves.tsx';
 
@@ -157,7 +158,7 @@ const App: React.FC = () => {
                 <AnimatedWaves />
             </div>
             <div className="container">
-            
+                <div className='container-items'>
                 <form onSubmit={handleFileUpload}>
                     {(!isGenerating && !isLoading && !isFileSelected) && <label className="upload-button">
                         Select file
@@ -210,8 +211,17 @@ const App: React.FC = () => {
                         )}
                     </div>
                 </form>
+                
                 {showModal && <ErrorModal message={modalMessage} onClose={closeModal} />}
             </div>
+            <div className="compare-link-container">
+                <Link to="/compare" className="compare-link">
+                   or just compare files <span>&rarr;</span>
+                </Link>
+            </div>
+            </div>
+            
+            
         </div>
     );
 };
