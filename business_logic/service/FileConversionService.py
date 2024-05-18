@@ -20,10 +20,10 @@ def convert_file(folder_path, selected_files, conversion_type, audio_filter=None
             output_file = f"{os.path.splitext(file)[0]}_{timestamp}.{conversion_type}"
             output_file_path = os.path.join(folder_path, output_file)
 
-        command = f"ffmpeg -i  {input_file} -movflags use_metadata_tags -map_metadata 0 "
+        command = f"ffmpeg -i  {input_file} -map_metadata 0 -id3v2_version 3 "
 
         if conversion_type == 'mp3':
-            command += f"-vn -ar 48000 -ac 2 -b:a {mp3_bitrate}k "
+            command += f"-vn -ar 48000 -ac 2 -ab {mp3_bitrate}k "
         elif conversion_type == 'flac':
             command += "-vn -c:a flac "
         elif conversion_type == 'm4a':

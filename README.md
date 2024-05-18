@@ -9,6 +9,7 @@ As of the moment, the application is using
 * librosa
 * numpy
 * pyplot
+* flask
 
 For application to run be sure to have installed ffmpeg on the system first:
 ```

@@ -28,28 +28,40 @@ const Registration: React.FC<RegistrationProps> = ({ onClose }) => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const expression: RegExp = /^(?=.{1,254}$)(?=.{1,64}@)[-!#$%&'*+/0-9=?A-Z^_`a-z{|}~]+(\.[-!#$%&'*+/0-9=?A-Z^_`a-z{|}~]+)*@[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$/;
 
     const { username, email, password, confirmPassword } = formData;
-
+    if (expression.test(email) === false) {
+      setErrorMessage('Invalid email');
+      return;
+    }
     if (password !== confirmPassword) {
       setErrorMessage('Passwords do not match');
       return;
     }
+    if (email === '' || username === '' || password === '') {
+      setErrorMessage('All fields are required');
+      return;
+    }
+    if (password.length < 8) {
+      setErrorMessage('Password must be at least 8 characters');
+      return;
+    }
 
     const auth = await register(username, email, password);
-    if (auth) {
-      setIsRegistered(true);
-      setTimeout(() => {
-        onClose();
-      }, 2000);
-    } else {
-      setIsError(true);
-      setErrorMessage('Registration failed');
-      setTimeout(() => {
-        setIsError(false);
-      }, 2000);
-    }
-  };
+      if (auth.success) {
+        setIsRegistered(true);
+        setTimeout(() => {
+          onClose();
+        }, 2000);
+      } else {
+        setIsError(true);
+        setErrorMessage('Registration failed');
+        setTimeout(() => {
+          setIsError(false);
+        }, 2000);
+      }
+    };
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

@@ -167,8 +167,8 @@ def register():
             return jsonify({'success': False, 'error': 'Database error, please try again'}), 500
 
 
-    @app.route('/profile', methods=['GET'])
-    def view_profile():
+@app.route('/profile', methods=['GET'])
+def view_profile():
         user = get_current_user()
         if not user:
             abort(401)
@@ -289,7 +289,6 @@ def conversion():
             silence_duration = request.form.get('silence_duration')
             volume_level = request.form.get('volume_level')
             mp3_bitrate = request.form.get('mp3_bitrate')
-            folder_name = get_folder_name_user()
 
             folder_path = os.path.join(app.config['UPLOAD_FOLDER'], folder_name)
             converted_files = convert_file(
@@ -432,6 +431,133 @@ def generate_graph_for_file():
             return jsonify({'filename': filename, 'image_url': image_url}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/compare', methods=['POST'])
+def compare():
+    user = get_current_user()
+    if user:
+        folder_name = user.folder_name
+    else:
+        folder_name = request.cookies.get('guest_folder')
+
+    if not folder_name:
+        print('Error in comparison')
+        abort(401)
+
+    upload_folder = app.config['UPLOAD_FOLDER']
+    folder_path = os.path.join(upload_folder, folder_name)
+
+    os.makedirs(folder_path, exist_ok=True)
+
+    file1 = request.files.get('file1')
+    file2 = request.files.get('file2')
+
+    if file1 and file2:
+        file1_path = os.path.join(folder_path, secure_filename(file1.filename))
+        file2_path = os.path.join(folder_path, secure_filename(file2.filename))
+
+        file1.save(file1_path)
+        file2.save(file2_path)
+
+        filename1 = secure_filename(file1.filename)
+        try:
+            audio = MutagenFile(file1_path)
+            metadata = {
+                "length": audio.info.length,
+                "bitrate": audio.info.bitrate,
+                "sample_rate": audio.info.sample_rate,
+                "channels": audio.info.channels,
+                "artist": audio.get("artist", ["Unknown Artist"])[0],
+                "title": audio.get("title", ["Unknown Title"])[0]
+            }
+            file1_metadata = metadata
+            with open(file1_path, 'rb') as audio_file:
+                graph_data1 = graph_creation(audio_file, filename1)
+                graph_base64_1 = base64.b64encode(graph_data1).decode('utf-8')
+                image_url1 = 'data:image/png;base64,' + graph_base64_1
+                file1_result = {'filename': filename1, 'image_url': image_url1, 'metadata': file1_metadata}
+        except Exception as e:
+            file1_result = {'filename': filename1, 'error': str(e)}
+
+        filename2 = secure_filename(file2.filename)
+        try:
+            audio = MutagenFile(file2_path)
+            metadata = {
+                "length": audio.info.length,
+                "bitrate": audio.info.bitrate,
+                "sample_rate": audio.info.sample_rate,
+                "channels": audio.info.channels,
+                "artist": audio.get("artist", ["Unknown Artist"])[0],
+                "title": audio.get("title", ["Unknown Title"])[0]
+            }
+            file2_metadata = metadata
+            with open(file2_path, 'rb') as audio_file:
+                graph_data2 = graph_creation(audio_file, filename2)
+                graph_base64_2 = base64.b64encode(graph_data2).decode('utf-8')
+                image_url2 = 'data:image/png;base64,' + graph_base64_2
+                file2_result = {'filename': filename2, 'image_url': image_url2, 'metadata': file2_metadata}
+        except Exception as e:
+            file2_result = {'filename': filename2, 'error': str(e)}
+
+        os.remove(file1_path)
+        os.remove(file2_path)
+
+    else:
+        data = request.get_json()
+        file1_name = data.get('file1')
+        file2_name = data.get('file2')
+
+        if not file1_name or not file2_name:
+            return jsonify({'error': 'Missing file names'}), 400
+
+        file1_path = os.path.join(folder_path, file1_name)
+        file2_path = os.path.join(folder_path, file2_name)
+
+        if not os.path.exists(file1_path) or not os.path.exists(file2_path):
+            return jsonify({'error': 'One or more files not found'}), 404
+
+        filename1 = secure_filename(file1_name)
+        try:
+            audio = MutagenFile(file1_path)
+            metadata = {
+                "length": audio.info.length,
+                "bitrate": audio.info.bitrate,
+                "sample_rate": audio.info.sample_rate,
+                "channels": audio.info.channels,
+                "artist": audio.get("artist", ["Unknown Artist"])[0],
+                "title": audio.get("title", ["Unknown Title"])[0]
+            }
+            file1_metadata = metadata
+            with open(file1_path, 'rb') as audio_file:
+                graph_data1 = graph_creation(audio_file, filename1)
+                graph_base64_1 = base64.b64encode(graph_data1).decode('utf-8')
+                image_url1 = 'data:image/png;base64,' + graph_base64_1
+                file1_result = {'filename': filename1, 'image_url': image_url1, 'metadata': file1_metadata}
+        except Exception as e:
+            file1_result = {'filename': filename1, 'error': str(e)}
+
+        filename2 = secure_filename(file2_name)
+        try:
+            audio = MutagenFile(file2_path)
+            metadata = {
+                "length": audio.info.length,
+                "bitrate": audio.info.bitrate,
+                "sample_rate": audio.info.sample_rate,
+                "channels": audio.info.channels,
+                "artist": audio.get("artist", ["Unknown Artist"])[0],
+                "title": audio.get("title", ["Unknown Title"])[0]
+            }
+            file2_metadata = metadata
+            with open(file2_path, 'rb') as audio_file:
+                graph_data2 = graph_creation(audio_file, filename2)
+                graph_base64_2 = base64.b64encode(graph_data2).decode('utf-8')
+                image_url2 = 'data:image/png;base64,' + graph_base64_2
+                file2_result = {'filename': filename2, 'image_url': image_url2, 'metadata': file2_metadata}
+        except Exception as e:
+            file2_result = {'filename': filename2, 'error': str(e)}
+
+    return jsonify({'file1_result': file1_result, 'file2_result': file2_result}), 200
 
 
 @app.route('/check_cookies', methods=["GET"])

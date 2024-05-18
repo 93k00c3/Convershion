@@ -7,6 +7,7 @@ import Cookies from 'js-cookie';
 import ErrorModal from './folder/ErrorModal.tsx';
 import FolderExplorer from './folder/FolderExplorer.tsx';
 
+
 interface ConversionProps {
     files: string[];
     availableExtensions: {
@@ -23,7 +24,7 @@ const Conversion: React.FC<ConversionProps> = (availableExtensions) => {
     const [silenceThreshold, setSilenceThreshold] = useState(-30);
     const [silenceDuration, setSilenceDuration] = useState(1);
     const [volumeLevel, setVolumeLevel] = useState(100);
-    const [selectedBitrate, setSelectedBitrate] = useState('');
+    const [selectedBitrate, setSelectedBitrate] = useState('320');
     const [fetchedFiles, setFetchedFiles] = useState<string[]>([]);
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const [showModal, setShowModal] = useState<boolean>(false);
