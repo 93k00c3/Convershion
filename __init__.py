@@ -22,7 +22,6 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 app = Flask(__name__, static_folder='front/build')
 login_manager = LoginManager()
 login_manager.init_app(app)
-config = configparser.ConfigParser()
 app.app_context()
 CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3000"}})
 config = configparser.ConfigParser()
