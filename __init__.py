@@ -44,6 +44,15 @@ Session(app)
 db.init_app(app)
 migrate = Migrate(app, db)
 
+
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    print('UPLOAD_FOLDER does not exist - trying to create.')
+    try:
+        os.makedirs(app.config['UPLOAD_FOLDER'])
+    except:
+        print('UPLOAD_FOLDER could not be created. To ensure the files are parsed please create and add the UPLOAD_FOLDER to the config.')
+
+
 with app.app_context():
     migrate.init_app(app)
 
